@@ -1,56 +1,62 @@
-# CLEON Blackjack Mobile Round UI QA
+# CLEOPATRA Responsive Wordmark QA
 
-Date: 2026-07-16
+Date: 2026-07-17
 
 ## Source visual truth
 
-- Dealer overlap reference: `references/2026-07-16-mobile-request-dealer-before.png`
-- Decision panel reference: `references/2026-07-16-mobile-request-decision-before.png`
-- Side-bet result overlap reference: `references/2026-07-16-mobile-request-sidebet-before.png`
-- Required outcome: dealer cards below the decorative chip rack, smaller move status, a premium full-width decision panel, immediate side-bet win announcements, compact side-bet result labels, and a trophy win-streak counter below the betting chips.
+- User issue capture: `/var/folders/yt/kcls64mx48d25tx442463l2c0000gn/T/TemporaryItems/NSIRD_screencaptureui_Mb5vCT/Screenshot 2026-07-17 at 12.19.42 AM.png`
+- Product constraint: retain the full emblem, `CLEOPATRA CASINO` wordmark, `BLACKJACK` sub-label, and centered table rules while preventing the long wordmark from crowding the gold capsule.
 
 ## Implementation evidence
 
-- Mobile betting state, 390 × 844: `references/2026-07-16-mobile-request-betting-final.png`
-- Mobile active-decision state, 390 × 844: `references/2026-07-16-mobile-request-decision-final.png`
-- Mobile side-bet result state, 390 × 844: `references/2026-07-16-mobile-request-sidebet-final.png`
-- Combined source/implementation comparison: `references/2026-07-16-mobile-request-comparison.png`
+- Mobile implementation, 390 x 844: `references/2026-07-17-cleopatra-wordmark-mobile-final.png`
+- Desktop implementation, 1440 x 900: `references/2026-07-17-cleopatra-wordmark-desktop-final.png`
+- Full mobile before/after comparison: `references/2026-07-17-cleopatra-wordmark-full-comparison.png`
+- Focused source/fix comparison: `references/2026-07-17-cleopatra-wordmark-focused-comparison.png`
+- State: Free Bet table, waiting for bets, initial sample hands visible.
+
+## Full-view comparison evidence
+
+- The mobile before/after sheet confirms the table composition, cards, betting circles, rules, chip rack, and deal control remain in their original positions.
+- The only material layout change is the centered wordmark capsule: it is wider and the display lettering scales down slightly to create safe edge spacing.
+
+## Focused region comparison evidence
+
+- The focused comparison shows the original long wordmark approaching the right capsule edge and the revised lockup retaining clear space on both sides.
+- At 390px, the capsule is 343.2px wide, the wordmark is 196.8px wide, and the wordmark retains 54.7px of right-side space after the emblem and internal layout are accounted for.
 
 ## Findings
 
-- No actionable P0/P1/P2 differences remain for the requested mobile states.
-- Dealer placement: the mobile dealer zone now begins beneath the decorative chip rack at a reduced scale. Cards no longer cover the rack or status controls.
-- Dealer notification: table status uses a 26px compact pill and dealer/AI messages reduce to 7px with guarded width and ellipsis.
-- Decisions: the inherited tablet grid area was removed. Hit, Stand, Double, and Split now occupy four equal columns across the full in-table panel, with stronger available states and a coral urgent-timer treatment.
-- Side-bet timing: Hot 3, 21+3, and Perfect Pairs resolve immediately after the opening deal. Browser verification captured `21+3 · STRAIGHT +₱2,500.00` while the main hand was still at `YOUR MOVE · 10 SECONDS`.
-- Side-bet labels: mobile result pills use short, per-circle copy such as `WIN +₱2,500`, preventing cross-circle overlap.
-- Win streak: the trophy row appears directly below the betting chip rack. A positive-net test round advanced the visible streak from 0 to 1; pushes preserve it and losses reset it by rule and test.
-- Layout rhythm: the betting dock is 124px to accommodate the trophy row while locked-round controls remain inside the table and the lower dock collapses to 0px.
-- Branding and rules remain centered between dealer and player zones without obscuring hands or wagers.
+- No actionable P0/P1/P2 differences remain.
+- Fonts and typography: the same Georgia display stack, gold/platinum hierarchy, weight, and one-line wordmark are preserved. Responsive size and tracking now prevent edge crowding.
+- Spacing and layout rhythm: capsule width and horizontal padding increased without moving the dealer cards or the three rule lines. Document width remains exactly 390px with no horizontal overflow.
+- Colors and visual tokens: the existing graphite, warm-gold outline, platinum wordmark, and gold `BLACKJACK` label are unchanged.
+- Image quality and asset fidelity: the supplied C-and-crown raster emblem is retained at its intended aspect ratio with no replacement or stretching.
+- Copy and content: `CLEOPATRA CASINO`, `BLACKJACK`, and all rule text remain complete and unwrapped.
 
-## Interaction verification
+## Comparison history
 
-- Started a live Free Bet round at the 390 × 844 viewport.
-- Verified the dealer up-card and hole card landed below the decorative rack.
-- Verified the human hand and all four decisions stayed visible in one viewport.
-- Verified the decision panel used its full available width with no dead left column.
-- Placed ₱250 on Hot 3, 21+3, and Perfect Pairs before dealing.
-- Verified the winning 21+3 announcement and compact wager-circle badge appeared before Stand or dealer play.
-- Verified a completed positive-net round advanced the trophy streak to 1.
-- Verified 18/18 Node game tests passed.
-- Verified the Vite production build passed.
-- Verified `git diff --check` passed.
+- Earlier P2: the renamed wordmark used sizing and padding tuned for the shorter CLEON name, so `CLEOPATRA CASINO` visually crowded the right edge.
+- Fix: expanded the responsive capsule, reduced the mobile display size and tracking slightly, added a no-wrap constraint, and increased desktop right padding.
+- Post-fix evidence: the full and focused comparison sheets show safe spacing with no card, rule, or betting-layout regression.
+
+## Interaction and runtime verification
+
+- Chip tap increased the main wager from PHP 250 to PHP 350.
+- Browser console warnings/errors: none.
+- Mobile horizontal overflow: none (`documentWidth` 390 at a 390px viewport).
+- Node game tests: 18/18 passed.
+- Vite production build: passed.
+- `git diff --check`: passed.
 
 ## Implementation checklist
 
-- [x] Dealer cards below chip rack on mobile.
-- [x] Smaller dealer/AI status typography.
-- [x] Full-width premium in-table decision panel.
-- [x] Immediate opening side-bet win announcement.
-- [x] Compact, non-overlapping side-bet result labels.
-- [x] Trophy win streak below chip rack.
-- [x] Persistent streak restore from round history/local storage.
-- [x] 390 × 844 browser verification.
-- [x] Tests and production build passed.
+- [x] Full Cleopatra wordmark retained.
+- [x] Mobile capsule edge crowding removed.
+- [x] Desktop capsule padding balanced.
+- [x] Cards and rules remain in place.
+- [x] No horizontal overflow.
+- [x] Primary chip interaction still works.
+- [x] Browser console is clean.
 
 final result: passed

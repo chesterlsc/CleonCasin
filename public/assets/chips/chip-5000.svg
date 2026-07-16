@@ -20,6 +20,6 @@
       <path d="M128 66v124M66 128h124M84 84l88 88M172 84l-88 88"/>
     </g>
     <text x="128" y="141" text-anchor="middle" fill="#fff" stroke="#05070a" stroke-width="3" paint-order="stroke" font-family="Georgia,serif" font-size="45" font-weight="700">5000</text>
-    <text x="128" y="168" text-anchor="middle" fill="#efc96d" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="3">CLEON</text>
+    <text x="128" y="168" text-anchor="middle" fill="#efc96d" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.5">CLEOPATRA</text>
   </g>
 </svg>

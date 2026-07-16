@@ -129,7 +129,8 @@ const SIDE_BET_LABELS = {
   perfectPairs: "PERFECT PAIRS",
   bustIt: "BUST IT",
 };
-const WIN_STREAK_KEY = "cleon-win-streak";
+const WIN_STREAK_KEY = "cleopatra-win-streak";
+const LEGACY_WIN_STREAK_KEY = "cleon-win-streak";
 const emptySideBetStacks = () => Object.fromEntries(SIDE_BET_KEYS.map((key) => [key, []]));
 const emptySideBets = () => Object.fromEntries(
   SIDE_BET_KEYS.map((key) => [key, { stake: 0, result: null, returned: 0 }]),
@@ -145,7 +146,9 @@ const card = (rank, suit) => ({ rank, suit });
 const readWinStreak = () => {
   if (typeof window === "undefined") return 0;
   try {
-    return Math.max(0, Number(window.localStorage.getItem(WIN_STREAK_KEY)) || 0);
+    const currentValue = window.localStorage.getItem(WIN_STREAK_KEY);
+    const legacyValue = window.localStorage.getItem(LEGACY_WIN_STREAK_KEY);
+    return Math.max(0, Number(currentValue ?? legacyValue) || 0);
   } catch {
     return 0;
   }
@@ -214,6 +217,7 @@ function BettingSpot({ id, label, odds, Icon, values, total, result, dragging, d
     <div
       className={`betting-spot spot-${id}${dragging ? " is-drop-ready" : ""}${total > 0 ? " has-bet" : ""}${result?.result ? " has-result" : ""}${!interactive ? " is-disabled" : ""}`}
       data-testid={`betting-spot-${id}`}
+      data-bet-target={id === "hot-three" ? "hotThree" : id === "twenty-one-three" ? "twentyOneThree" : id === "perfect-pairs" ? "perfectPairs" : "bustIt"}
       onDragOver={(event) => {
         if (!interactive) return;
         event.preventDefault();
@@ -283,7 +287,6 @@ function WinStreakBadge({ value, compact = false }) {
   return (
     <div className={`win-streak-badge${value > 0 ? " is-active" : ""}${compact ? " is-compact" : ""}`} aria-label={`${value} round win streak`}>
       <Trophy size={compact ? 14 : 16} weight={value > 0 ? "fill" : "duotone"} aria-hidden="true" />
-      <span>WIN STREAK</span>
       <strong>{value}</strong>
     </div>
   );
@@ -362,7 +365,7 @@ function BrandLockup({ compact = false }) {
     <span className={`brand-lockup${compact ? " is-compact" : ""}`}>
       <img src="/assets/brand/cleon-casino-mark.png" alt="" aria-hidden="true" />
       <span>
-        <strong>CLEON</strong>
+        <strong>CLEOPATRA</strong>
         <small>CASINO</small>
       </span>
     </span>
@@ -413,7 +416,7 @@ function LiveStats({ stats, compact = false }) {
   ];
 
   return (
-    <div className={`live-stats${compact ? " is-compact" : ""}`} aria-label="Cleon session statistics">
+    <div className={`live-stats${compact ? " is-compact" : ""}`} aria-label="Cleopatra session statistics">
       {items.map(({ label, value, Icon, tone }) => (
         <div key={label} className={`live-stat tone-${tone}`}>
           <Icon size={compact ? 15 : 17} weight="duotone" aria-hidden="true" />
@@ -434,7 +437,20 @@ function DecisionClock({ seconds, limit, label = "DECISION" }) {
   );
 }
 
-function SoloBettingPrompt({ seconds, selectedChip, selectedBet, winStreak, disabled, onChip, onUndo, onDouble }) {
+function SoloBettingPrompt({
+  seconds,
+  selectedChip,
+  selectedBet,
+  winStreak,
+  disabled,
+  onChip,
+  onChipPointerDown,
+  onChipPointerMove,
+  onChipPointerUp,
+  onChipPointerCancel,
+  onUndo,
+  onDouble,
+}) {
   return (
     <div className="solo-betting-prompt" role="status" aria-label={`Place your bets. ${seconds} seconds shown on the betting clock.`}>
       <strong>PLACE YOUR BETS</strong>
@@ -448,7 +464,18 @@ function SoloBettingPrompt({ seconds, selectedChip, selectedBet, winStreak, disa
           <small>UNDO</small>
         </button>
         {BETS.map((bet) => (
-          <button key={bet} type="button" className={`solo-rack-chip${selectedChip === bet ? " is-active" : ""}`} onClick={() => onChip(bet)} disabled={disabled}>
+          <button
+            key={bet}
+            type="button"
+            className={`solo-rack-chip${selectedChip === bet ? " is-active" : ""}`}
+            onClick={(event) => onChip(event, bet)}
+            onPointerDown={(event) => onChipPointerDown(event, bet)}
+            onPointerMove={onChipPointerMove}
+            onPointerUp={onChipPointerUp}
+            onPointerCancel={onChipPointerCancel}
+            disabled={disabled}
+            aria-label={`Add ${formatPeso(bet)} chip to the main bet. Drag to a betting circle.`}
+          >
             <ChipAsset value={bet} className="solo-chip-asset" />
             <small>{formatPeso(bet).replace(".00", "")}</small>
           </button>
@@ -468,7 +495,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
     {
       id: "solo",
       eyebrow: "SOLO LIVE TABLE",
-      title: "CLEON ONE",
+      title: "CLEOPATRA ONE",
       copy: "A focused dealer-versus-you table with a full 12-second decision window for every move.",
       timer: "12 SEC",
       minimum: "₱100 MIN",
@@ -478,7 +505,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
     {
       id: "arena",
       eyebrow: "MULTI-SEAT ARENA",
-      title: "CLEON ROYALE",
+      title: "CLEOPATRA ROYALE",
       copy: "Choose any seat, watch every AI decision, and queue your next move before your turn arrives.",
       timer: "10 SEC",
       minimum: "₱100 MIN",
@@ -499,7 +526,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
 
       <section className="lobby-hero">
         <div className="lobby-hero-copy">
-          <span className="lobby-kicker"><Crown size={17} weight="fill" /> CLEON LIVE BLACKJACK</span>
+          <span className="lobby-kicker"><Crown size={17} weight="fill" /> CLEOPATRA LIVE BLACKJACK</span>
           <h1>Choose your table.<br />Own every decision.</h1>
           <p>Classic and Free Bet blackjack with Evolution-style pacing, tracked PHP results, and a persistent round ledger.</p>
           <LiveStats stats={stats} />
@@ -512,7 +539,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
         </div>
       </section>
 
-      <section className="lobby-tables" aria-label="Cleon blackjack tables">
+      <section className="lobby-tables" aria-label="Cleopatra blackjack tables">
         <div className="lobby-section-heading">
           <div><span>LIVE NOW</span><h2>Blackjack tables</h2></div>
           <p>Both tables include Hot 3, 21+3, Perfect Pairs, and Bust It side bets.</p>
@@ -722,7 +749,7 @@ function Modal({ title, children, onClose, className = "" }) {
       <section className={`modal ${className}`} role="dialog" aria-modal="true" aria-label={title} onMouseDown={(event) => event.stopPropagation()}>
         <header>
           <div>
-            <span className="modal-kicker">CLEON CASINO</span>
+            <span className="modal-kicker">CLEOPATRA CASINO</span>
             <h2>{title}</h2>
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label={`Close ${title}`}>
@@ -773,6 +800,7 @@ export function App() {
   const [sideBetStacks, setSideBetStacks] = useState(emptySideBetStacks);
   const [selectedChip, setSelectedChip] = useState(250);
   const [draggingChip, setDraggingChip] = useState(null);
+  const [touchChipDrag, setTouchChipDrag] = useState(null);
   const [chipFlight, setChipFlight] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [soundOn, setSoundOn] = useState(true);
@@ -811,6 +839,8 @@ export function App() {
 
   const gameRef = useRef(INITIAL_GAME);
   const shoeRef = useRef([]);
+  const touchChipDragRef = useRef(null);
+  const suppressChipClickRef = useRef(false);
   const toastTimerRef = useRef(null);
   const chipTimerRef = useRef(null);
   const sideBetAnnouncementTimerRef = useRef(null);
@@ -992,7 +1022,7 @@ export function App() {
     const url = URL.createObjectURL(file);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `cleon-revenue-${exportedAt.toISOString().slice(0, 10)}.json`;
+    link.download = `cleopatra-revenue-${exportedAt.toISOString().slice(0, 10)}.json`;
     document.body.append(link);
     link.click();
     link.remove();
@@ -1037,10 +1067,10 @@ export function App() {
         name: index === humanIndex ? "You" : seat.name === "You" ? AI_NAMES[index % AI_NAMES.length] : seat.name,
         hands: [],
       }));
-      next.message = "CLEON ONE · 12 SECOND DECISIONS";
+      next.message = "CLEOPATRA ONE · 12 SECOND DECISIONS";
     } else {
       next.seats = next.seats.map((seat) => ({ ...seat, hands: [] }));
-      next.message = "CLEON ROYALE · CHOOSE YOUR SEAT";
+      next.message = "CLEOPATRA ROYALE · CHOOSE YOUR SEAT";
     }
     next.phase = "betting";
     next.activeSeat = null;
@@ -1295,6 +1325,65 @@ export function App() {
     event.dataTransfer.setData("text/plain", String(value));
     setSelectedChip(value);
     setDraggingChip(value);
+  };
+
+  const beginTouchChipDrag = (event, value) => {
+    if ((event.pointerType === "mouse" && !isMobileTable) || !["betting", "settled"].includes(gameRef.current.phase)) return;
+    touchChipDragRef.current = {
+      pointerId: event.pointerId,
+      value,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragging: false,
+    };
+    setSelectedChip(value);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const moveTouchChipDrag = (event) => {
+    const drag = touchChipDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+    if (!drag.dragging && distance < 8) return;
+    event.preventDefault();
+    drag.dragging = true;
+    suppressChipClickRef.current = true;
+    setDraggingChip(drag.value);
+    setTouchChipDrag({ value: drag.value, x: event.clientX, y: event.clientY });
+  };
+
+  const finishTouchChipDrag = (event) => {
+    const drag = touchChipDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.dragging) {
+      event.preventDefault();
+      const dropElement = document.elementFromPoint(event.clientX, event.clientY);
+      const target = dropElement?.closest?.("[data-bet-target]")?.dataset.betTarget;
+      if (target) placeChip(target, drag.value);
+      window.setTimeout(() => { suppressChipClickRef.current = false; }, 0);
+    }
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    touchChipDragRef.current = null;
+    setTouchChipDrag(null);
+    setDraggingChip(null);
+  };
+
+  const cancelTouchChipDrag = (event) => {
+    if (touchChipDragRef.current?.pointerId !== event.pointerId) return;
+    touchChipDragRef.current = null;
+    suppressChipClickRef.current = false;
+    setTouchChipDrag(null);
+    setDraggingChip(null);
+  };
+
+  const handleChipTap = (event, value) => {
+    if (suppressChipClickRef.current) {
+      event.preventDefault();
+      return;
+    }
+    addChip(value);
   };
 
   const queueAdvanceDecision = (action) => {
@@ -1929,9 +2018,9 @@ export function App() {
   };
 
   const copyDepositLink = () => {
-    const depositLink = `cleon://deposit/${cashierReference || "pending"}`;
+    const depositLink = `cleopatra://deposit/${cashierReference || "pending"}`;
     navigator.clipboard?.writeText(depositLink).catch(() => {});
-    showToast("CLEON deposit link copied.");
+    showToast("CLEOPATRA deposit link copied.");
   };
 
   const resetTable = (requestedDeckCount = deckCount) => {
@@ -2031,7 +2120,7 @@ export function App() {
           <button type="button" className="icon-button menu-button" onClick={(event) => { event.stopPropagation(); setMenuOpen((open) => !open); }} aria-label="Open table menu">
             <List size={25} weight="bold" aria-hidden="true" />
           </button>
-          <button type="button" className="topbar-brand-button" onClick={() => !ROUND_LOCKED_PHASES.includes(game.phase) && setView("lobby")} aria-label="Open Cleon Casino lobby" disabled={ROUND_LOCKED_PHASES.includes(game.phase)}>
+          <button type="button" className="topbar-brand-button" onClick={() => !ROUND_LOCKED_PHASES.includes(game.phase) && setView("lobby")} aria-label="Open Cleopatra Casino lobby" disabled={ROUND_LOCKED_PHASES.includes(game.phase)}>
             <BrandLockup compact />
           </button>
           <div className="balance-panel" aria-label={`PHP balance ${formatPeso(walletBalance)}`}>
@@ -2073,10 +2162,19 @@ export function App() {
         </div>
       </header>
 
+      {touchChipDrag && (
+        <ChipAsset
+          value={touchChipDrag.value}
+          className="touch-chip-ghost"
+          style={{ left: touchChipDrag.x, top: touchChipDrag.y }}
+          alt=""
+        />
+      )}
+
       <section className="table-stage" aria-label={`${mode === "freebet" ? "Free Bet" : "Classic"} Blackjack table`}>
         <img className="table-background" src="/assets/carbon-club-table.png" alt="Premium graphite blackjack table with card shoe and chip rack" />
 
-        <div className="table-session-badge"><span></span>{tableVariant === "solo" ? "CLEON ONE · SOLO" : "CLEON ROYALE · 6 SEATS"} · {deckCount} DECKS</div>
+        <div className="table-session-badge"><span></span>{tableVariant === "solo" ? "CLEOPATRA ONE · SOLO" : "CLEOPATRA ROYALE · 6 SEATS"} · {deckCount} DECKS</div>
         <div className={`table-stats-panel${statsMinimized ? " is-minimized" : ""}`}>
           <button type="button" className="stats-collapse" onClick={() => setStatsMinimized((value) => !value)} aria-label={statsMinimized ? "Show revenue statistics" : "Minimize revenue statistics"}>
             {statsMinimized ? <ChartLineUp size={18} weight="duotone" /> : <CaretUp size={17} weight="bold" />}
@@ -2137,7 +2235,11 @@ export function App() {
             selectedBet={selectedBet}
             winStreak={winStreak}
             disabled={!['betting', 'settled'].includes(game.phase)}
-            onChip={addChip}
+            onChip={handleChipTap}
+            onChipPointerDown={beginTouchChipDrag}
+            onChipPointerMove={moveTouchChipDrag}
+            onChipPointerUp={finishTouchChipDrag}
+            onChipPointerCancel={cancelTouchChipDrag}
             onUndo={undoChip}
             onDouble={doubleBet}
           />
@@ -2163,9 +2265,9 @@ export function App() {
           )}
         </div>
 
-        <div className="table-brand" aria-label="Cleon Casino Blackjack table">
+        <div className="table-brand" aria-label="Cleopatra Casino Blackjack table">
           <img src="/assets/brand/cleon-casino-mark.png" alt="" aria-hidden="true" />
-          <span><strong>CLEON CASINO</strong><small>BLACKJACK</small></span>
+          <span><strong>CLEOPATRA CASINO</strong><small>BLACKJACK</small></span>
         </div>
 
         <div className="table-rules" aria-hidden="true">
@@ -2204,6 +2306,7 @@ export function App() {
           <button
             type="button"
             className={`main-bet-circle${selectedBet > 0 ? " has-bet" : ""}${draggingChip ? " is-drop-ready" : ""}`}
+            data-bet-target="main"
             disabled={!['betting', 'settled'].includes(game.phase)}
             onClick={() => placeChip("main")}
             onDragOver={(event) => {
@@ -2342,12 +2445,16 @@ export function App() {
                 key={bet}
                 type="button"
                 className={`chip-button${selectedChip === bet ? " is-active" : ""}${draggingChip === bet ? " is-dragging" : ""}`}
-                onClick={() => addChip(bet)}
+                onClick={(event) => handleChipTap(event, bet)}
                 disabled={!['betting', 'settled'].includes(game.phase)}
-                draggable={['betting', 'settled'].includes(game.phase)}
+                draggable={!isMobileTable && ['betting', 'settled'].includes(game.phase)}
                 onDragStart={(event) => beginChipDrag(event, bet)}
                 onDragEnd={() => setDraggingChip(null)}
-                aria-label={`Add ${formatPeso(bet)} chip to main bet. Drag for another betting spot.`}
+                onPointerDown={(event) => beginTouchChipDrag(event, bet)}
+                onPointerMove={moveTouchChipDrag}
+                onPointerUp={finishTouchChipDrag}
+                onPointerCancel={cancelTouchChipDrag}
+                aria-label={`Add ${formatPeso(bet)} chip to main bet. Drag to another betting spot.`}
               >
                 <ChipAsset value={bet} className="rack-chip" />
                 <span>+{formatPeso(bet).replace(".00", "")}</span>
@@ -2388,7 +2495,7 @@ export function App() {
       </section>
 
       {cashierOpen && (
-        <Modal title="CLEON Cashier" onClose={() => { if (!cashierProcessing) { setCashierOpen(false); setCashierStep("details"); setCashierReference(""); } }} className="deposit-modal cashier-modal">
+        <Modal title="CLEOPATRA Cashier" onClose={() => { if (!cashierProcessing) { setCashierOpen(false); setCashierStep("details"); setCashierReference(""); } }} className="deposit-modal cashier-modal">
           <form className={cashierStep === "review" && cashierMode === "deposit" ? "is-deposit-request" : ""} onSubmit={submitCashier}>
             <div className="cashier-mode-tabs" role="tablist" aria-label="Cashier transaction">
               <button
@@ -2415,7 +2522,7 @@ export function App() {
                 <p className="modal-intro">
                   {cashierMode === "deposit"
                     ? "Choose a Philippine channel and generate your payment request."
-                    : "Choose where to send funds from your CLEON PHP balance."}
+                    : "Choose where to send funds from your CLEOPATRA PHP balance."}
                 </p>
                 <div className="cashier-trust-row">
                   <PokerChip size={17} weight="duotone" />
@@ -2469,7 +2576,7 @@ export function App() {
                   <>
                     <h3>Confirm your withdrawal</h3>
                     <dl>
-                      <div><dt>Debit from</dt><dd>CLEON PHP BALANCE</dd></div>
+                      <div><dt>Debit from</dt><dd>CLEOPATRA PHP BALANCE</dd></div>
                       <div><dt>Send to</dt><dd>{depositAccount}</dd></div>
                       <div><dt>Withdrawal</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div>
                       <div><dt>Processing fee</dt><dd>₱0.00</dd></div>
@@ -2523,7 +2630,7 @@ export function App() {
                 <div><strong>Free Split</strong><p>Split matching-rank pairs for free except 10s, Jacks, Queens, and Kings.</p></div>
                 <div><strong>Dealer 22</strong><p>A dealer total of 22 pushes all live non-blackjack hands.</p></div>
                 <div><strong>Six Card Charlie</strong><p>Six cards totaling 21 or less win automatically, even against dealer blackjack.</p></div>
-                <div><strong>CLEON Advance Decision</strong><p>On CLEON ROYALE, queue Hit, Stand, Double, or Split while AI seats complete their decisions.</p></div>
+                <div><strong>CLEOPATRA Advance Decision</strong><p>On CLEOPATRA ROYALE, queue Hit, Stand, Double, or Split while AI seats complete their decisions.</p></div>
               </>
             ) : (
               <>

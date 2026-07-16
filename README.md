@@ -1,4 +1,4 @@
-# CLEON Casino Blackjack
+# CLEOPATRA Casino Blackjack
 
 A cinematic browser blackjack table inspired by premium live-casino interfaces. It includes Classic and Free Bet modes, a PHP-denominated table balance, configurable player/AI seats, four functional side bets, and a simulated casino-style cashier.
 
@@ -22,7 +22,7 @@ Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/).
 - Six-deck continuous shoe with visible card count.
 - PHP balance, bet selection, settlement, and a simulated Deposit flow.
 - Hot 3, 21+3, Perfect Pairs, and Bust It side bets with published live-blackjack-style paytables.
-- CLEON ONE focused play and CLEON ROYALE six-seat table play.
+- CLEOPATRA ONE focused play and CLEOPATRA ROYALE six-seat table play.
 - Responsive desktop and mobile layouts, keyboard focus states, reduced-motion support, and optional sound.
 
 The cashier is intentionally a sandbox interaction. It does not connect to payment rails, request credentials, or move real money.
