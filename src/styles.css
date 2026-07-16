@@ -1395,6 +1395,10 @@ input:focus-visible {
   cursor: not-allowed;
 }
 
+.table-decision-controls {
+  display: none;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -3080,8 +3084,22 @@ input:focus-visible {
     min-width: 0;
     min-height: 0;
     height: 100dvh;
-    grid-template-rows: 100px minmax(325px, 1fr) 238px;
+    grid-template-rows: 100px minmax(390px, 1fr) 112px;
     overflow: hidden;
+  }
+
+  .casino-app.phase-dealing,
+  .casino-app.phase-ai-turn,
+  .casino-app.phase-playing,
+  .casino-app.phase-dealer {
+    grid-template-rows: 100px minmax(390px, 1fr) 0;
+  }
+
+  .casino-app.phase-dealing > .control-dock,
+  .casino-app.phase-ai-turn > .control-dock,
+  .casino-app.phase-playing > .control-dock,
+  .casino-app.phase-dealer > .control-dock {
+    display: none;
   }
 
   .topbar {
@@ -3155,20 +3173,26 @@ input:focus-visible {
   .control-dock {
     min-width: 0;
     grid-template-columns: 1fr;
-    grid-template-areas: "bet" "deal" "actions";
-    gap: 9px;
-    padding: 9px 10px 10px;
+    grid-template-areas: "bet" "deal";
+    gap: 5px;
+    padding: 6px 10px;
   }
 
   .bet-controls {
     justify-items: center;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
   }
 
   .bet-heading {
     width: min(100%, 390px);
+    min-height: 10px;
+    justify-content: flex-end;
   }
+
+  .bet-heading > span { display: none; }
+
+  .bet-heading strong { font-size: 9px; }
 
   .bet-row {
     justify-content: center;
@@ -3176,13 +3200,14 @@ input:focus-visible {
   }
 
   .chip-button {
-    width: 44px;
-    height: 53px;
+    width: 42px;
+    height: 45px;
+    padding-block: 0;
   }
 
   .rack-chip {
-    width: 37px;
-    height: 37px;
+    width: 34px;
+    height: 34px;
   }
 
   .chip-button span {
@@ -3191,63 +3216,66 @@ input:focus-visible {
   }
 
   .mini-control {
-    width: 27px;
-    height: 27px;
-    flex-basis: 27px;
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
   }
 
   .deal-button {
-    width: min(100%, 280px);
-    height: 49px;
+    width: min(100%, 330px);
+    height: 40px;
     justify-self: center;
+    border-radius: 8px;
+    font-size: 12px;
   }
 
-  .action-controls {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: 100%;
-    gap: 5px;
-  }
-
-  .action-controls button {
-    min-height: 49px;
-    padding-inline: 4px;
-    gap: 4px;
-    font-size: 9px;
-  }
-
-  .table-rules {
-    display: none;
-  }
+  .control-dock > .action-controls,
+  .control-dock > .advance-decision-bar { display: none; }
 
   .table-brand {
-    top: 29.5%;
+    top: 26%;
     right: auto;
-    left: 8px;
-    width: 122px;
+    left: 50%;
+    width: min(70vw, 280px);
     max-width: none;
-    padding: 5px 6px 5px 5px;
-    transform: none;
-    gap: 5px;
+    box-sizing: border-box;
+    justify-content: center;
+    padding: 9px 13px 9px 10px;
+    transform: translateX(-50%);
+    gap: 10px;
+    border-color: rgba(240, 201, 116, 0.28);
+    background: rgba(8, 12, 16, 0.76);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32), inset 0 0 24px rgba(240, 201, 116, 0.03);
     text-align: left;
   }
 
   .table-brand img {
-    width: 31px;
-    height: 31px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
   }
 
   .table-brand > span { min-width: 0; }
 
   .table-brand strong {
-    max-width: 68px;
-    font-size: 12px;
-    line-height: 0.84;
-    white-space: normal;
+    max-width: none;
+    font-size: clamp(19px, 4.8vw, 23px);
+    line-height: 0.96;
+    letter-spacing: 0.045em;
+    white-space: nowrap;
   }
 
   .table-brand small {
-    font-size: 5px;
-    letter-spacing: 0.2em;
+    font-size: 6px;
+    letter-spacing: 0.32em;
+  }
+
+  .table-rules {
+    top: calc(26% + 62px);
+    width: calc(100% - 20px);
+    display: grid;
+    gap: 4px;
+    color: rgba(232, 237, 242, 0.52);
   }
 
   .center-betting-arc {
@@ -3348,16 +3376,24 @@ input:focus-visible {
   }
 
   .table-rules strong {
-    font-size: 15px;
+    font-size: clamp(18px, 5vw, 25px);
+    line-height: 1.02;
+    letter-spacing: 0.025em;
   }
 
-  .table-rules span,
+  .table-rules span {
+    font-size: clamp(7px, 2.2vw, 11px);
+    line-height: 1.1;
+  }
+
   .table-rules b {
-    font-size: 8px;
+    font-size: clamp(8px, 2.4vw, 12px);
+    line-height: 1.1;
+    color: rgba(108, 228, 189, 0.78);
   }
 
   .dealer-zone {
-    top: 7.5%;
+    top: 5%;
     transform: translateX(-50%) scale(0.9);
     transform-origin: top center;
   }
@@ -3401,14 +3437,98 @@ input:focus-visible {
   .table-seat.role-you,
   .table-seat.role-you:hover {
     left: 50% !important;
-    top: 55% !important;
+    top: 62% !important;
     transform: translate(-50%, -50%) scale(0.94);
     filter: drop-shadow(0 0 22px rgba(91, 140, 255, 0.22));
   }
 
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-seat.role-you,
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-seat.role-you:hover {
+    top: 62% !important;
+  }
+
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .center-betting-arc {
+    top: 76%;
+  }
+
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-brand {
+    top: 26%;
+  }
+
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-rules {
+    top: calc(26% + 62px);
+  }
+
+  .table-decision-controls {
+    position: absolute;
+    right: 9px;
+    bottom: 8px;
+    left: 9px;
+    z-index: 19;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid rgba(108, 228, 189, 0.26);
+    border-radius: 12px;
+    background: rgba(7, 11, 15, 0.88);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(10px);
+  }
+
+  .phase-playing .table-decision-controls,
+  .phase-ai-turn .table-decision-controls {
+    display: grid;
+  }
+
+  .table-decision-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 4px;
+  }
+
+  .table-decision-heading strong {
+    color: #eef3f2;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.11em;
+    white-space: nowrap;
+  }
+
+  .table-decision-heading small {
+    display: none;
+  }
+
+  .table-decision-heading .status-dot {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 auto;
+  }
+
+  .table-decision-controls .action-controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .table-decision-controls .action-controls button {
+    min-height: 42px;
+    gap: 3px;
+    padding: 0 3px;
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(18, 25, 32, 0.92);
+    font-size: 8px;
+  }
+
+  .table-decision-controls .action-controls button:not(:disabled) {
+    border-color: rgba(108, 228, 189, 0.42);
+    box-shadow: 0 0 18px rgba(108, 228, 189, 0.06);
+  }
+
   .table-solo .table-seat.role-you,
   .table-solo .table-seat.role-you:hover {
-    top: 55% !important;
+    top: 62% !important;
     transform: translate(-50%, -50%) scale(0.94);
   }
 
@@ -3513,7 +3633,7 @@ input:focus-visible {
   }
 
   .toast {
-    bottom: 246px;
+    bottom: 120px;
     max-width: calc(100vw - 28px);
     text-align: center;
   }
@@ -3620,6 +3740,14 @@ input:focus-visible {
 
   .is-solo-betting .center-betting-arc {
     top: 77%;
+  }
+
+  .is-solo-betting .table-brand {
+    top: 43%;
+  }
+
+  .is-solo-betting .table-rules {
+    top: calc(43% + 64px);
   }
 
   .is-solo-betting .control-dock {
@@ -3735,32 +3863,33 @@ input:focus-visible {
 
 @media (max-width: 400px) {
   .table-brand {
-    top: 17%;
-    left: 4px;
-    width: 68px;
+    left: 50%;
+    width: min(70vw, 280px);
     min-height: 0;
-    flex-direction: column;
-    padding: 3px 4px 4px;
-    gap: 0;
-    text-align: center;
+    flex-direction: row;
+    padding: 9px 10px 9px 8px;
+    transform: translateX(-50%);
+    gap: 8px;
+    text-align: left;
   }
 
   .table-brand img {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
   }
 
-  .table-brand > span { justify-items: center; }
+  .table-brand > span { justify-items: start; }
 
   .table-brand strong {
-    max-width: 60px;
-    font-size: 10px;
-    line-height: 0.82;
+    max-width: none;
+    font-size: clamp(18px, 5.1vw, 21px);
+    line-height: 0.94;
+    white-space: nowrap;
   }
 
   .table-brand small {
-    font-size: 4px;
-    letter-spacing: 0.14em;
+    font-size: 5px;
+    letter-spacing: 0.25em;
   }
 }
 

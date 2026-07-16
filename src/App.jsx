@@ -882,7 +882,7 @@ export function App() {
       setCasinoStats({ ...EMPTY_STATS, ...payload.stats });
       setBetHistory((history) => [payload.record, ...history.filter((item) => item.id !== optimisticRecord.id && item.id !== payload.record.id)].slice(0, 80));
     } catch {
-      showToast("Round saved locally in this session; ledger sync will retry on refresh.");
+      // Keep the optimistic session ledger without interrupting the finished round.
     }
   };
 
@@ -2092,6 +2092,36 @@ export function App() {
             onClear={() => clearSideBet("bustIt")}
           />
         </div>
+
+        <section className={`table-decision-controls${isAdvanceMode ? " is-advance-mode" : ""}`} aria-label="Player decisions">
+          <div className="table-decision-heading" role="status" aria-live="polite">
+            <span className="status-dot phase-playing"></span>
+            <strong>
+              {isAdvanceMode
+                ? advanceDecision ? `${advanceDecision.toUpperCase()} QUEUED` : "ADVANCE DECISION"
+                : decisionHand ? `YOUR MOVE · ${decisionSeconds} SECONDS` : "PLAYER DECISIONS"}
+            </strong>
+            <small>{isAdvanceMode ? "CHOOSE BEFORE YOUR TURN" : "HIT · STAND · DOUBLE · SPLIT"}</small>
+          </div>
+          <div className={`action-controls${isAdvanceMode ? " is-advance-mode" : ""}`}>
+            <button type="button" className={advanceDecision === "hit" ? "is-queued" : ""} onClick={() => handleDecision("hit")} disabled={!canHit} aria-pressed={isAdvanceMode ? advanceDecision === "hit" : undefined}>
+              <Plus size={20} weight="bold" aria-hidden="true" />
+              {isAdvanceMode && advanceDecision === "hit" ? "HIT QUEUED" : "HIT"}
+            </button>
+            <button type="button" className={advanceDecision === "stand" ? "is-queued" : ""} onClick={() => handleDecision("stand")} disabled={!decisionHand} aria-pressed={isAdvanceMode ? advanceDecision === "stand" : undefined}>
+              <HandPalm size={21} aria-hidden="true" />
+              {isAdvanceMode && advanceDecision === "stand" ? "STAND QUEUED" : "STAND"}
+            </button>
+            <button type="button" className={`${freeDouble ? "free-action" : ""}${advanceDecision === "double" ? " is-queued" : ""}`} onClick={() => handleDecision("double")} disabled={!canDouble} aria-pressed={isAdvanceMode ? advanceDecision === "double" : undefined}>
+              <PokerChip size={20} weight="duotone" aria-hidden="true" />
+              {isAdvanceMode && advanceDecision === "double" ? "DOUBLE QUEUED" : freeDouble ? "FREE DOUBLE" : "DOUBLE"}
+            </button>
+            <button type="button" className={`${freeSplit ? "free-action" : ""}${advanceDecision === "split" ? " is-queued" : ""}`} onClick={() => handleDecision("split")} disabled={!canSplit} aria-pressed={isAdvanceMode ? advanceDecision === "split" : undefined}>
+              <ArrowsLeftRight size={21} aria-hidden="true" />
+              {isAdvanceMode && advanceDecision === "split" ? "SPLIT QUEUED" : freeSplit ? "FREE SPLIT" : "SPLIT"}
+            </button>
+          </div>
+        </section>
 
         <div className="seats-layer">
           {game.seats.map((seat, index) => (
