@@ -441,7 +441,6 @@ function SoloBettingPrompt({
   seconds,
   selectedChip,
   selectedBet,
-  winStreak,
   disabled,
   onChip,
   onChipPointerDown,
@@ -485,7 +484,6 @@ function SoloBettingPrompt({
           <small>DOUBLE</small>
         </button>
       </div>
-      <WinStreakBadge value={winStreak} compact />
     </div>
   );
 }
@@ -2233,7 +2231,6 @@ export function App() {
             seconds={bettingSeconds}
             selectedChip={selectedChip}
             selectedBet={selectedBet}
-            winStreak={winStreak}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onChip={handleChipTap}
             onChipPointerDown={beginTouchChipDrag}
@@ -2351,6 +2348,9 @@ export function App() {
             onPlace={(value) => placeChip("bustIt", value)}
             onClear={() => clearSideBet("bustIt")}
           />
+          <div className="table-win-streak">
+            <WinStreakBadge value={winStreak} compact />
+          </div>
         </div>
 
         <section className={`table-decision-controls${isAdvanceMode ? " is-advance-mode" : ""}${decisionSeconds <= 3 ? " is-urgent" : ""}`} aria-label="Player decisions">
@@ -2464,7 +2464,6 @@ export function App() {
               <Trash size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
-          <WinStreakBadge value={winStreak} />
         </div>
 
         <button type="button" className="deal-button" onClick={startRound} disabled={selectedBet <= 0 || ROUND_LOCKED_PHASES.includes(game.phase)}>
