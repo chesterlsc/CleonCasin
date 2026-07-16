@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const dataFile = resolve(projectRoot, ".data/cleon-casino.json");
-const emptyLedger = { history: [], deposits: [] };
+const emptyLedger = { history: [], deposits: [], withdrawals: [] };
 
 async function readLedger() {
   try {
@@ -77,6 +77,7 @@ function createCasinoApi() {
           stats: buildStats(ledger.history),
           history: ledger.history.slice(0, 80),
           deposits: ledger.deposits.slice(0, 20),
+          withdrawals: ledger.withdrawals.slice(0, 20),
           lobby: { dailySoloPlayers: dailySoloPlayers(), decisionSeconds: 12 },
         }));
         return;
@@ -93,6 +94,7 @@ function createCasinoApi() {
           stats: buildStats(ledger.history),
           history: ledger.history,
           deposits: ledger.deposits,
+          withdrawals: ledger.withdrawals,
         }));
         return;
       }
@@ -138,8 +140,24 @@ function createCasinoApi() {
         return;
       }
 
+      if (request.method === "POST" && pathname === "/api/withdrawals") {
+        const payload = await readBody(request);
+        const withdrawal = {
+          id: `withdrawal-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          method: String(payload.method || "cashier").slice(0, 32),
+          amount: Math.max(0, Number(payload.amount || 0)),
+        };
+        ledger.withdrawals.unshift(withdrawal);
+        ledger.withdrawals = ledger.withdrawals.slice(0, 100);
+        await writeLedger(ledger);
+        response.statusCode = 201;
+        response.end(JSON.stringify({ withdrawal }));
+        return;
+      }
+
       if (request.method === "POST" && pathname === "/api/reset") {
-        await writeLedger({ ...structuredClone(emptyLedger), deposits: ledger.deposits });
+        await writeLedger({ ...structuredClone(emptyLedger), deposits: ledger.deposits, withdrawals: ledger.withdrawals });
         response.end(JSON.stringify({ ok: true, stats: buildStats([]) }));
         return;
       }

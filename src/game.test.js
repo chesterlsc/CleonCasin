@@ -18,6 +18,7 @@ import {
   sideBetReturn,
   soloBettingExpiry,
   timeoutDecision,
+  winStreakFromHistory,
 } from "./game.js";
 
 const card = (rank, suit = "spades") => ({ rank, suit });
@@ -175,4 +176,10 @@ test("Hi-Lo card count values low, neutral, and high cards", () => {
   assert.equal(hiLoCountValue(card("2")), 1);
   assert.equal(hiLoCountValue(card("8")), 0);
   assert.equal(hiLoCountValue(card("A")), -1);
+});
+
+test("win streak counts recent wins, preserves pushes, and stops at a loss", () => {
+  assert.equal(winStreakFromHistory([{ net: 250 }, { net: 0 }, { net: 100 }, { net: -250 }, { net: 500 }]), 2);
+  assert.equal(winStreakFromHistory([{ net: 0 }, { net: 0 }]), 0);
+  assert.equal(winStreakFromHistory([{ net: -10 }, { net: 250 }]), 0);
 });

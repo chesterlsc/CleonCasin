@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ArrowDown,
   ArrowCounterClockwise,
+  ArrowUp,
   ArrowsLeftRight,
-  Bank,
   CaretRight,
   CaretUp,
   CardsThree,
@@ -11,8 +12,8 @@ import {
   CheckCircle,
   CircleDashed,
   ClockCounterClockwise,
+  Copy,
   Crown,
-  DeviceMobile,
   DownloadSimple,
   Eye,
   EyeSlash,
@@ -22,15 +23,16 @@ import {
   HandPalm,
   Hourglass,
   Lightning,
+  LinkSimple,
   List,
   Play,
   Plus,
   PokerChip,
   Question,
+  QrCode,
   Receipt,
   Robot,
   Seal,
-  ShieldCheck,
   SpeakerHigh,
   SpeakerSlash,
   SpinnerGap,
@@ -42,7 +44,6 @@ import {
   Trophy,
   User,
   UsersThree,
-  Wallet,
   X,
 } from "@phosphor-icons/react";
 import {
@@ -70,6 +71,7 @@ import {
   sideBetReturn,
   soloBettingExpiry,
   timeoutDecision,
+  winStreakFromHistory,
 } from "./game.js";
 
 const SUIT_MARKS = {
@@ -79,10 +81,11 @@ const SUIT_MARKS = {
   clubs: "♣",
 };
 
-const BETS = [10, 25, 100, 250, 500];
+const BETS = [100, 250, 500, 1000, 2500, 5000, 10000];
 const DECK_OPTIONS = [2, 6, 8];
-const MAX_BET = 10000;
-const SIDE_BET_MAX = 2500;
+const MAX_BET = 250000;
+const SIDE_BET_MAX = 10000;
+const CASHIER_MAX = 500000;
 const DEAL_SPEEDS = {
   slow: { label: "SLOW", step: 360, card: 1180, reveal: 1700, dealerGap: 1500, settle: 900, transition: 820, max: 8500 },
   normal: { label: "NORMAL", step: 220, card: 880, reveal: 1150, dealerGap: 1050, settle: 680, transition: 620, max: 6200 },
@@ -92,7 +95,10 @@ const DEAL_SPEED_ORDER = ["normal", "turbo", "slow"];
 const ROUND_LOCKED_PHASES = ["dealing", "ai-turn", "playing", "dealer"];
 const EMPTY_STATS = { rounds: 0, totalWagered: 0, totalWins: 0, netRevenue: 0, winRate: 0 };
 const AI_NAMES = ["Nova", "Rook", "Ace", "Knight", "Mika", "Seven"];
-const CHIP_SRC = Object.fromEntries(BETS.map((value) => [value, `/assets/chips/chip-${value}.png`]));
+const CHIP_SRC = Object.fromEntries(BETS.map((value) => [
+  value,
+  `/assets/chips/chip-${value}.${value >= 1000 ? "svg" : "png"}`,
+]));
 const DEAL_VECTORS = [
   { x: "72vw", y: "-44vh", spin: "-26deg" },
   { x: "57vw", y: "-51vh", spin: "-19deg" },
@@ -117,17 +123,41 @@ const SIDE_BET_FLIGHT_TARGETS = {
   bustIt: { left: "66%", top: "84%" },
 };
 const SIDE_BET_KEYS = ["hotThree", "twentyOneThree", "perfectPairs", "bustIt"];
+const SIDE_BET_LABELS = {
+  hotThree: "HOT 3",
+  twentyOneThree: "21+3",
+  perfectPairs: "PERFECT PAIRS",
+  bustIt: "BUST IT",
+};
+const WIN_STREAK_KEY = "cleon-win-streak";
 const emptySideBetStacks = () => Object.fromEntries(SIDE_BET_KEYS.map((key) => [key, []]));
 const emptySideBets = () => Object.fromEntries(
   SIDE_BET_KEYS.map((key) => [key, { stake: 0, result: null, returned: 0 }]),
 );
 const PAYMENT_METHODS = [
-  { id: "gcash", label: "GCash", helper: "Mobile wallet", Icon: DeviceMobile, tone: "gcash" },
-  { id: "maya", label: "Maya", helper: "Wallet & bank", Icon: Wallet, tone: "maya" },
-  { id: "bank", label: "Online bank", helper: "InstaPay", Icon: Bank, tone: "bank" },
+  { id: "gcash", label: "GCash", helper: "Mobile wallet", logo: "/assets/gcash-logo.svg", tone: "gcash" },
+  { id: "maya", label: "Maya", helper: "Wallet & bank", logo: "/assets/maya-logo.svg", tone: "maya" },
+  { id: "bank", label: "QR Ph", helper: "Online bank · InstaPay", logo: "/assets/qr-ph-logo.svg", tone: "bank" },
 ];
 
 const card = (rank, suit) => ({ rank, suit });
+
+const readWinStreak = () => {
+  if (typeof window === "undefined") return 0;
+  try {
+    return Math.max(0, Number(window.localStorage.getItem(WIN_STREAK_KEY)) || 0);
+  } catch {
+    return 0;
+  }
+};
+
+const persistWinStreak = (value) => {
+  try {
+    window.localStorage.setItem(WIN_STREAK_KEY, String(value));
+  } catch {
+    // The in-memory streak remains available when storage is blocked.
+  }
+};
 
 function displayHand(id, cards, bet = 250, action = "") {
   return {
@@ -162,14 +192,16 @@ function ChipAsset({ value, className = "", style, alt = "" }) {
 
 function BetStack({ values, total, compact = false }) {
   const visible = values.slice(-4);
+  const chipCount = values.length;
 
   return (
-    <div className={`bet-stack${compact ? " is-compact" : ""}`} aria-label={`Bet ${formatPeso(total)}`}>
+    <div className={`bet-stack${compact ? " is-compact" : ""}`} aria-label={`Bet ${formatPeso(total)}, ${chipCount} ${chipCount === 1 ? "chip" : "chips"}`}>
       <div className="bet-stack-chips" aria-hidden="true">
         {visible.map((value, index) => (
           <ChipAsset key={`${value}-${index}`} value={value} className="stack-chip" style={{ "--stack-index": index, "--stack-rotate": `${(index - 1) * 4}deg` }} />
         ))}
       </div>
+      <span className="bet-chip-count" aria-hidden="true"><b>{chipCount}</b><small>{chipCount === 1 ? "CHIP" : "CHIPS"}</small></span>
       <strong>{formatPeso(total).replace(".00", "")}</strong>
     </div>
   );
@@ -213,11 +245,20 @@ function BettingSpot({ id, label, odds, Icon, values, total, result, dragging, d
         {total > 0 ? <BetStack values={values} total={total} compact /> : <small>DROP CHIP</small>}
         {result?.stake > 0 && (
           <b className={`side-bet-result${result.result?.push ? " is-push" : result.returned > 0 ? " is-win" : ""}`}>
-            {result.result?.push
-              ? "PUSH · BET RETURNED"
-              : result.returned > 0
-                ? `${result.result.label} +${formatPeso(result.returned - result.stake)}`
-                : "NO WIN"}
+            <span className="side-bet-result-full">
+              {result.result?.push
+                ? "PUSH · BET RETURNED"
+                : result.returned > 0
+                  ? `${result.result.label} +${formatPeso(result.returned - result.stake)}`
+                  : "NO WIN"}
+            </span>
+            <span className="side-bet-result-compact">
+              {result.result?.push
+                ? "PUSH"
+                : result.returned > 0
+                  ? `WIN +${formatPeso(result.returned - result.stake).replace(".00", "")}`
+                  : "NO WIN"}
+            </span>
           </b>
         )}
       </button>
@@ -234,6 +275,16 @@ function BettingSpot({ id, label, odds, Icon, values, total, result, dragging, d
           <X size={13} weight="bold" aria-hidden="true" />
         </button>
       )}
+    </div>
+  );
+}
+
+function WinStreakBadge({ value, compact = false }) {
+  return (
+    <div className={`win-streak-badge${value > 0 ? " is-active" : ""}${compact ? " is-compact" : ""}`} aria-label={`${value} round win streak`}>
+      <Trophy size={compact ? 14 : 16} weight={value > 0 ? "fill" : "duotone"} aria-hidden="true" />
+      <span>WIN STREAK</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -306,29 +357,6 @@ function PlayingCard({ value, hidden = false, index = 0, targetSeat = null, isDe
   );
 }
 
-function RoundResultOverlay({ result }) {
-  if (!result || result.kind !== "win") return null;
-
-  const Icon = Trophy;
-
-  return (
-    <div
-      className={`round-result result-${result.kind}`}
-      data-testid="round-result"
-      role="status"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
-      <div className="round-result-panel">
-        <span>ROUND RESULT</span>
-        <Icon size={36} weight="duotone" aria-hidden="true" />
-        <h2>{result.label}</h2>
-        <strong>{result.amount}</strong>
-      </div>
-    </div>
-  );
-}
-
 function BrandLockup({ compact = false }) {
   return (
     <span className={`brand-lockup${compact ? " is-compact" : ""}`}>
@@ -338,6 +366,41 @@ function BrandLockup({ compact = false }) {
         <small>CASINO</small>
       </span>
     </span>
+  );
+}
+
+function PaymentBrand({ provider, compact = false }) {
+  return (
+    <span className={`payment-brand${compact ? " is-compact" : ""}`} aria-hidden="true">
+      <img src={provider.logo} alt="" />
+    </span>
+  );
+}
+
+function PaymentQr({ provider, reference }) {
+  const size = 21;
+  const seed = [...`${provider.id}-${reference}`].reduce((total, character) => ((total * 33) + character.charCodeAt(0)) >>> 0, 17);
+  const finderValue = (x, y, originX, originY) => {
+    const localX = x - originX;
+    const localY = y - originY;
+    if (localX < 0 || localX > 6 || localY < 0 || localY > 6) return null;
+    return localX === 0 || localX === 6 || localY === 0 || localY === 6 || (localX >= 2 && localX <= 4 && localY >= 2 && localY <= 4);
+  };
+  const cells = [];
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const finder = finderValue(x, y, 0, 0) ?? finderValue(x, y, size - 7, 0) ?? finderValue(x, y, 0, size - 7);
+      const filled = finder ?? (((x * 17) + (y * 29) + seed + ((x * y) % 11)) % 5 < 2);
+      if (filled) cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" rx="0.08" />);
+    }
+  }
+
+  return (
+    <div className="payment-qr" aria-label={`${provider.label} deposit QR request`}>
+      <svg viewBox={`-2 -2 ${size + 4} ${size + 4}`} role="img" aria-hidden="true">{cells}</svg>
+      <span><PaymentBrand provider={provider} compact /></span>
+    </div>
   );
 }
 
@@ -371,7 +434,7 @@ function DecisionClock({ seconds, limit, label = "DECISION" }) {
   );
 }
 
-function SoloBettingPrompt({ seconds, selectedChip, selectedBet, disabled, onChip, onUndo, onDouble }) {
+function SoloBettingPrompt({ seconds, selectedChip, selectedBet, winStreak, disabled, onChip, onUndo, onDouble }) {
   return (
     <div className="solo-betting-prompt" role="status" aria-label={`Place your bets. ${seconds} seconds shown on the betting clock.`}>
       <strong>PLACE YOUR BETS</strong>
@@ -395,6 +458,7 @@ function SoloBettingPrompt({ seconds, selectedChip, selectedBet, disabled, onChi
           <small>DOUBLE</small>
         </button>
       </div>
+      <WinStreakBadge value={winStreak} compact />
     </div>
   );
 }
@@ -407,7 +471,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
       title: "CLEON ONE",
       copy: "A focused dealer-versus-you table with a full 12-second decision window for every move.",
       timer: "12 SEC",
-      minimum: "₱10 MIN",
+      minimum: "₱100 MIN",
       players: `${dailyPlayers} TODAY`,
       accent: "mint",
     },
@@ -417,7 +481,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
       title: "CLEON ROYALE",
       copy: "Choose any seat, watch every AI decision, and queue your next move before your turn arrives.",
       timer: "10 SEC",
-      minimum: "₱10 MIN",
+      minimum: "₱100 MIN",
       players: "6 SEATS",
       accent: "coral",
     },
@@ -717,9 +781,12 @@ export function App() {
   const [showCardCount, setShowCardCount] = useState(false);
   const [runningCount, setRunningCount] = useState(0);
   const [statsMinimized, setStatsMinimized] = useState(false);
-  const [roundResult, setRoundResult] = useState(null);
+  const [sideBetAnnouncement, setSideBetAnnouncement] = useState(null);
+  const [totalWinPopup, setTotalWinPopup] = useState(null);
+  const [winStreak, setWinStreak] = useState(readWinStreak);
   const [isMobileTable, setIsMobileTable] = useState(false);
-  const [depositOpen, setDepositOpen] = useState(false);
+  const [cashierOpen, setCashierOpen] = useState(false);
+  const [cashierMode, setCashierMode] = useState("deposit");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -727,8 +794,9 @@ export function App() {
   const [depositAmount, setDepositAmount] = useState(1000);
   const [depositMethod, setDepositMethod] = useState("gcash");
   const [depositAccount, setDepositAccount] = useState("");
-  const [depositStep, setDepositStep] = useState("details");
-  const [depositing, setDepositing] = useState(false);
+  const [cashierReference, setCashierReference] = useState("");
+  const [cashierStep, setCashierStep] = useState("details");
+  const [cashierProcessing, setCashierProcessing] = useState(false);
   const [toast, setToast] = useState("");
   const [game, setGame] = useState(INITIAL_GAME);
   const [shoeCount, setShoeCount] = useState(312);
@@ -745,7 +813,8 @@ export function App() {
   const shoeRef = useRef([]);
   const toastTimerRef = useRef(null);
   const chipTimerRef = useRef(null);
-  const resultTimerRef = useRef(null);
+  const sideBetAnnouncementTimerRef = useRef(null);
+  const totalWinTimerRef = useRef(null);
   const decisionTimerRef = useRef(null);
   const statsResetTimerRef = useRef(null);
   const aiTimerRefs = useRef([]);
@@ -766,6 +835,9 @@ export function App() {
   const speedConfig = DEAL_SPEEDS[dealSpeed];
   const decisionLimit = tableVariant === "solo" ? 12 : 10;
   const depositProvider = PAYMENT_METHODS.find((method) => method.id === depositMethod) ?? PAYMENT_METHODS[0];
+  const cashierAvailable = ROUND_LOCKED_PHASES.includes(game.phase)
+    ? walletBalance
+    : Math.max(0, walletBalance - totalSelectedBet);
   const trueCount = shoeCount > 0 ? runningCount / Math.max(1, shoeCount / 52) : 0;
 
   useEffect(() => {
@@ -781,7 +853,8 @@ export function App() {
       mobileQuery.removeEventListener?.("change", syncMobileMode);
       window.clearTimeout(toastTimerRef.current);
       window.clearTimeout(chipTimerRef.current);
-      window.clearTimeout(resultTimerRef.current);
+      window.clearTimeout(sideBetAnnouncementTimerRef.current);
+      window.clearTimeout(totalWinTimerRef.current);
       window.clearInterval(decisionTimerRef.current);
       window.clearTimeout(statsResetTimerRef.current);
       aiTimerRefs.current.forEach((timer) => window.clearTimeout(timer));
@@ -790,7 +863,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (tableVariant !== "solo" || !["betting", "settled"].includes(game.phase)) return undefined;
+    if (tableVariant !== "solo" || !["betting", "settled"].includes(game.phase) || totalWinPopup) return undefined;
     setBettingSeconds(12);
     let launchTimer = null;
     const timer = window.setInterval(() => {
@@ -805,7 +878,7 @@ export function App() {
       window.clearInterval(timer);
       window.clearTimeout(launchTimer);
     };
-  }, [tableVariant, game.phase, game.round]);
+  }, [tableVariant, game.phase, game.round, totalWinPopup]);
 
   useEffect(() => {
     let active = true;
@@ -813,8 +886,14 @@ export function App() {
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Session API unavailable")))
       .then((session) => {
         if (!active) return;
+        const history = Array.isArray(session.history) ? session.history : [];
         setCasinoStats({ ...EMPTY_STATS, ...session.stats });
-        setBetHistory(Array.isArray(session.history) ? session.history : []);
+        setBetHistory(history);
+        if (history.length) {
+          const streak = winStreakFromHistory(history);
+          setWinStreak(streak);
+          persistWinStreak(streak);
+        }
         setDailySoloPlayers(Number(session.lobby?.dailySoloPlayers || 74));
       })
       .catch(() => {
@@ -841,15 +920,20 @@ export function App() {
     return nextBalance;
   };
 
-  const dismissRoundResult = () => {
-    window.clearTimeout(resultTimerRef.current);
-    setRoundResult(null);
+  const dismissSideBetAnnouncement = () => {
+    window.clearTimeout(sideBetAnnouncementTimerRef.current);
+    setSideBetAnnouncement(null);
   };
 
-  const showRoundResult = (result) => {
-    window.clearTimeout(resultTimerRef.current);
-    setRoundResult(result);
-    resultTimerRef.current = window.setTimeout(() => setRoundResult(null), 4200);
+  const dismissTotalWinPopup = () => {
+    window.clearTimeout(totalWinTimerRef.current);
+    setTotalWinPopup(null);
+  };
+
+  const showTotalWinPopup = (label, amount) => {
+    window.clearTimeout(totalWinTimerRef.current);
+    setTotalWinPopup({ id: Date.now(), label, amount });
+    totalWinTimerRef.current = window.setTimeout(() => setTotalWinPopup(null), 3600);
   };
 
   const saveRoundHistory = async (round) => {
@@ -869,6 +953,11 @@ export function App() {
         netRevenue: stats.netRevenue + round.net,
         winRate: rounds ? Math.round((wins / rounds) * 100) : 0,
       };
+    });
+    setWinStreak((current) => {
+      const next = round.net > 0 ? current + 1 : round.net < 0 ? 0 : current;
+      persistWinStreak(next);
+      return next;
     });
 
     try {
@@ -928,6 +1017,8 @@ export function App() {
       const payload = await response.json();
       setCasinoStats({ ...EMPTY_STATS, ...payload.stats });
       setBetHistory([]);
+      setWinStreak(0);
+      persistWinStreak(0);
       showToast("Revenue stats and round history reset.");
     } catch {
       showToast("Revenue reset failed. The saved ledger was not changed.");
@@ -1045,6 +1136,24 @@ export function App() {
     });
   };
 
+  const announceSideBetWins = (sideBets, keys = SIDE_BET_KEYS) => {
+    const wins = keys.flatMap((key) => {
+      const sideBet = sideBets[key];
+      if (!sideBet?.stake || sideBet.returned <= sideBet.stake || !sideBet.result?.label) return [];
+      return [{
+        key,
+        label: SIDE_BET_LABELS[key],
+        result: sideBet.result.label,
+        profit: sideBet.returned - sideBet.stake,
+      }];
+    });
+    if (!wins.length) return;
+    window.clearTimeout(sideBetAnnouncementTimerRef.current);
+    setSideBetAnnouncement({ id: `${Date.now()}-${wins.map((win) => win.key).join("-")}`, wins });
+    sideBetAnnouncementTimerRef.current = window.setTimeout(() => setSideBetAnnouncement(null), 3600);
+    playTone(880, 0.12);
+  };
+
   const loadShoe = (count = deckCount) => {
     shoeRef.current = createShoe(count);
     runningCountRef.current = 0;
@@ -1070,7 +1179,7 @@ export function App() {
   });
 
   const updateBetMessage = (mainTotal, nextSideTotals = sideBetTotals) => {
-    dismissRoundResult();
+    dismissSideBetAnnouncement();
     const next = copyGame(gameRef.current);
     const combinedTotal = mainTotal + Object.values(nextSideTotals).reduce((sum, value) => sum + value, 0);
     next.phase = "betting";
@@ -1373,11 +1482,12 @@ export function App() {
           returned += sideBet.returned;
           if (sideBet.returned > sideBet.stake) sideBetWins.push(key);
         });
+        announceSideBetWins(settled.sideBets, ["bustIt"]);
 
         const net = returned - fundedStake;
         const balanceAfter = updateBalance((balance) => balance + returned);
         if (!humanResults.length) settled.message = "AI ROUND COMPLETE";
-        else if (net > 0) settled.message = `TOTAL RETURN ${formatPeso(returned)}`;
+        else if (net > 0) settled.message = sideBetWins.length && humanResults.every((result) => result === "lose") ? "SIDE BET WIN" : "YOU WIN";
         else if (net === 0) settled.message = "PUSH — BET RETURNED";
         else settled.message = `DEALER WINS ${formatPeso(Math.abs(net))}`;
 
@@ -1394,10 +1504,8 @@ export function App() {
             : kind === "win"
               ? "YOU WIN"
               : "";
-          if (kind === "win") {
-            showRoundResult({ kind, label, amount: formatPeso(returned) });
-          }
           playResultSound(kind);
+          if (kind === "win") showTotalWinPopup(label, returned);
 
           const humanSeat = settled.seats.find((seat) => seat.role === "you");
           const playerTotal = humanSeat?.hands[0] ? handValue(humanSeat.hands[0].cards).total : 0;
@@ -1418,7 +1526,7 @@ export function App() {
             balanceAfter,
           });
         }
-        if (humanResults.length && net >= 0) showToast(settled.message);
+        if (humanResults.length && net === 0) showToast(settled.message);
         else {
           window.clearTimeout(toastTimerRef.current);
           setToast("");
@@ -1480,7 +1588,8 @@ export function App() {
     window.clearInterval(decisionTimerRef.current);
     advanceDecisionRef.current = null;
     setAdvanceDecision(null);
-    dismissRoundResult();
+    dismissSideBetAnnouncement();
+    dismissTotalWinPopup();
     if (selectedBet <= 0 && !spectatorRound) {
       showToast("Add at least one chip before dealing.");
       return;
@@ -1490,7 +1599,8 @@ export function App() {
         spectatorRound = true;
         showToast("WAGER SKIPPED · WATCHING TABLE ROUND");
       } else {
-        setDepositOpen(true);
+        setCashierMode("deposit");
+        setCashierOpen(true);
         showToast("Add to your PHP balance to cover the main and side bets.");
         return;
       }
@@ -1587,6 +1697,11 @@ export function App() {
         ready.sideBets.hotThree.result = evaluateHotThree([...openingCards, dealerUpCard]);
         ready.sideBets.twentyOneThree.result = evaluate21Plus3([...openingCards, dealerUpCard]);
         ready.sideBets.perfectPairs.result = evaluatePerfectPairs(openingCards);
+        ["hotThree", "twentyOneThree", "perfectPairs"].forEach((key) => {
+          const sideBet = ready.sideBets[key];
+          if (sideBet?.stake) sideBet.returned = sideBetReturn(sideBet.stake, sideBet.result);
+        });
+        announceSideBetWins(ready.sideBets, ["hotThree", "twentyOneThree", "perfectPairs"]);
       }
 
       runTableTurns(ready, rightToLeftSeatIndices(ready.seats));
@@ -1657,7 +1772,8 @@ export function App() {
     if (action === "double") {
       if (hand.cards.length !== 2) return;
       if (!freeDouble && walletBalance < hand.bet) {
-        setDepositOpen(true);
+        setCashierMode("deposit");
+        setCashierOpen(true);
         showToast("Top up your PHP balance to double.");
         return;
       }
@@ -1676,7 +1792,8 @@ export function App() {
     if (action === "split") {
       if (!isPair(hand.cards)) return;
       if (!freeSplit && walletBalance < hand.bet) {
-        setDepositOpen(true);
+        setCashierMode("deposit");
+        setCashierOpen(true);
         showToast("Top up your PHP balance to split.");
         return;
       }
@@ -1759,7 +1876,6 @@ export function App() {
   const changeMode = (nextMode) => {
     if (!["betting", "settled"].includes(game.phase)) return;
     setMode(nextMode);
-    dismissRoundResult();
     const next = copyGame(gameRef.current);
     next.phase = "betting";
     next.message = nextMode === "freebet" ? "FREE BET TABLE" : "CLASSIC TABLE";
@@ -1767,37 +1883,55 @@ export function App() {
     commitGame(next);
   };
 
-  const submitDeposit = (event) => {
+  const submitCashier = (event) => {
     event.preventDefault();
     const amount = Number(depositAmount);
-    if (!Number.isFinite(amount) || amount < 100 || amount > 50000) {
-      showToast("Choose an amount from ₱100 to ₱50,000.");
+    const transactionLabel = cashierMode === "withdraw" ? "withdrawal" : "deposit";
+    if (!Number.isFinite(amount) || amount < 100 || amount > CASHIER_MAX) {
+      showToast(`Choose a ${transactionLabel} from ₱100 to ${formatPeso(CASHIER_MAX)}.`);
       return;
     }
-    if (depositStep === "details") {
-      if (depositAccount.trim().length < 6) {
-        showToast(depositMethod === "bank" ? "Enter the sending bank account or mobile number." : `Enter the mobile number linked to ${depositProvider.label}.`);
+    if (cashierMode === "withdraw" && amount > cashierAvailable) {
+      showToast(`Available to withdraw: ${formatPeso(cashierAvailable)}.`);
+      return;
+    }
+    if (cashierStep === "details") {
+      if (cashierMode === "withdraw" && depositAccount.trim().length < 6) {
+        showToast(depositMethod === "bank" ? "Enter the receiving bank account or mobile number." : `Enter the mobile number linked to ${depositProvider.label}.`);
         return;
       }
-      setDepositStep("review");
+      setCashierReference(cashierMode === "deposit" ? `CLD-${Date.now().toString(36).slice(-7).toUpperCase()}` : "");
+      setCashierStep("review");
       playTone(420, 0.05);
       return;
     }
-    setDepositing(true);
+    setCashierProcessing(true);
     window.setTimeout(() => {
-      updateBalance((balance) => balance + amount);
-      fetch("/api/deposits", {
+      const isWithdrawal = cashierMode === "withdraw";
+      updateBalance((balance) => isWithdrawal ? Math.max(0, balance - amount) : balance + amount);
+      fetch(isWithdrawal ? "/api/withdrawals" : "/api/deposits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount, method: depositMethod }),
       }).catch(() => {});
-      setDepositing(false);
-      setDepositOpen(false);
-      setDepositStep("details");
+      setCashierProcessing(false);
+      setCashierOpen(false);
+      setCashierStep("details");
+      setCashierReference("");
       playTone(680, 0.13);
-      const reference = `CLN-${Date.now().toString(36).slice(-7).toUpperCase()}`;
-      showToast(`${formatPeso(amount)} received via ${depositProvider.label} · ${reference}`);
+      const reference = isWithdrawal
+        ? `CLW-${Date.now().toString(36).slice(-7).toUpperCase()}`
+        : cashierReference || `CLD-${Date.now().toString(36).slice(-7).toUpperCase()}`;
+      showToast(isWithdrawal
+        ? `${formatPeso(amount)} withdrawal sent to ${depositProvider.label} · ${reference}`
+        : `${formatPeso(amount)} received via ${depositProvider.label} · ${reference}`);
     }, 850);
+  };
+
+  const copyDepositLink = () => {
+    const depositLink = `cleon://deposit/${cashierReference || "pending"}`;
+    navigator.clipboard?.writeText(depositLink).catch(() => {});
+    showToast("CLEON deposit link copied.");
   };
 
   const resetTable = (requestedDeckCount = deckCount) => {
@@ -1811,7 +1945,6 @@ export function App() {
     loadShoe(nextDeckCount);
     advanceDecisionRef.current = null;
     setAdvanceDecision(null);
-    dismissRoundResult();
     setMenuOpen(false);
     showToast(`Fresh ${nextDeckCount}-deck shoe loaded.`);
   };
@@ -1927,7 +2060,7 @@ export function App() {
 
         <div className="topbar-actions">
           <button type="button" className="history-button topbar-history" onClick={() => setHistoryOpen(true)}><ClockCounterClockwise size={18} /> HISTORY</button>
-          <button type="button" className="deposit-button" onClick={() => setDepositOpen(true)}>DEPOSIT</button>
+          <button type="button" className="deposit-button" onClick={() => setCashierOpen(true)}>CASHIER</button>
           <button type="button" className="icon-button sound-button" onClick={() => setSoundOn((enabled) => !enabled)} aria-label={soundOn ? "Mute sound" : "Enable sound"}>
             {soundOn ? <SpeakerHigh size={24} aria-hidden="true" /> : <SpeakerSlash size={24} aria-hidden="true" />}
           </button>
@@ -1974,11 +2107,35 @@ export function App() {
           {game.message}
         </div>
 
-        {tableVariant === "solo" && ["betting", "settled"].includes(game.phase) && (
+        {sideBetAnnouncement && (
+          <div className="side-bet-announcement" role="status" aria-live="polite">
+            <Trophy size={20} weight="fill" aria-hidden="true" />
+            <span>
+              <small>SIDE BET HIT</small>
+              <strong>{sideBetAnnouncement.wins.map((win) => `${win.label} · ${win.result} +${formatPeso(win.profit)}`).join("  •  ")}</strong>
+            </span>
+          </div>
+        )}
+
+        {totalWinPopup && (
+          <div className="total-win-popup" role="status" aria-live="assertive">
+            <div className="total-win-panel">
+              <span className="total-win-icon"><Trophy size={30} weight="fill" aria-hidden="true" /></span>
+              <span className="total-win-copy">
+                <small>{totalWinPopup.label}</small>
+                <strong>TOTAL WIN</strong>
+              </span>
+              <b>{formatPeso(totalWinPopup.amount)}</b>
+            </div>
+          </div>
+        )}
+
+        {tableVariant === "solo" && ["betting", "settled"].includes(game.phase) && !totalWinPopup && (
           <SoloBettingPrompt
             seconds={bettingSeconds}
             selectedChip={selectedChip}
             selectedBet={selectedBet}
+            winStreak={winStreak}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onChip={addChip}
             onUndo={undoChip}
@@ -2025,7 +2182,7 @@ export function App() {
             Icon={FireSimple}
             values={sideBetStacks.hotThree}
             total={sideBetTotals.hotThree}
-            result={game.phase === "settled" ? game.sideBets.hotThree : null}
+            result={game.phase === "settled" || game.sideBets.hotThree?.returned > game.sideBets.hotThree?.stake ? game.sideBets.hotThree : null}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("hotThree", value)}
@@ -2038,7 +2195,7 @@ export function App() {
             Icon={CardsThree}
             values={sideBetStacks.twentyOneThree}
             total={sideBetTotals.twentyOneThree}
-            result={game.phase === "settled" ? game.sideBets.twentyOneThree : null}
+            result={game.phase === "settled" || game.sideBets.twentyOneThree?.returned > game.sideBets.twentyOneThree?.stake ? game.sideBets.twentyOneThree : null}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("twentyOneThree", value)}
@@ -2072,7 +2229,7 @@ export function App() {
             Icon={PokerChip}
             values={sideBetStacks.perfectPairs}
             total={sideBetTotals.perfectPairs}
-            result={game.phase === "settled" ? game.sideBets.perfectPairs : null}
+            result={game.phase === "settled" || game.sideBets.perfectPairs?.returned > game.sideBets.perfectPairs?.stake ? game.sideBets.perfectPairs : null}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("perfectPairs", value)}
@@ -2085,7 +2242,7 @@ export function App() {
             Icon={Seal}
             values={sideBetStacks.bustIt}
             total={sideBetTotals.bustIt}
-            result={game.phase === "settled" ? game.sideBets.bustIt : null}
+            result={game.phase === "settled" || game.sideBets.bustIt?.returned > game.sideBets.bustIt?.stake ? game.sideBets.bustIt : null}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("bustIt", value)}
@@ -2093,7 +2250,7 @@ export function App() {
           />
         </div>
 
-        <section className={`table-decision-controls${isAdvanceMode ? " is-advance-mode" : ""}`} aria-label="Player decisions">
+        <section className={`table-decision-controls${isAdvanceMode ? " is-advance-mode" : ""}${decisionSeconds <= 3 ? " is-urgent" : ""}`} aria-label="Player decisions">
           <div className="table-decision-heading" role="status" aria-live="polite">
             <span className="status-dot phase-playing"></span>
             <strong>
@@ -2113,10 +2270,12 @@ export function App() {
               {isAdvanceMode && advanceDecision === "stand" ? "STAND QUEUED" : "STAND"}
             </button>
             <button type="button" className={`${freeDouble ? "free-action" : ""}${advanceDecision === "double" ? " is-queued" : ""}`} onClick={() => handleDecision("double")} disabled={!canDouble} aria-pressed={isAdvanceMode ? advanceDecision === "double" : undefined}>
+              {freeDouble && <span className="free-bet-badge"><Lightning size={10} weight="fill" /> FREE BET</span>}
               <PokerChip size={20} weight="duotone" aria-hidden="true" />
               {isAdvanceMode && advanceDecision === "double" ? "DOUBLE QUEUED" : freeDouble ? "FREE DOUBLE" : "DOUBLE"}
             </button>
             <button type="button" className={`${freeSplit ? "free-action" : ""}${advanceDecision === "split" ? " is-queued" : ""}`} onClick={() => handleDecision("split")} disabled={!canSplit} aria-pressed={isAdvanceMode ? advanceDecision === "split" : undefined}>
+              {freeSplit && <span className="free-bet-badge"><Lightning size={10} weight="fill" /> FREE BET</span>}
               <ArrowsLeftRight size={21} aria-hidden="true" />
               {isAdvanceMode && advanceDecision === "split" ? "SPLIT QUEUED" : freeSplit ? "FREE SPLIT" : "SPLIT"}
             </button>
@@ -2151,8 +2310,6 @@ export function App() {
             style={chipFlight.style}
           />
         )}
-
-        <RoundResultOverlay result={roundResult} />
 
         <button type="button" className={`shoe-meter${showCardCount ? " is-open" : ""}`} onClick={() => setShowCardCount((visible) => !visible)} aria-label={showCardCount ? `Running count ${runningCount}, true count ${trueCount.toFixed(1)}, ${shoeCount} cards remaining. Hide card count.` : "Open card count"}>
           {showCardCount ? (
@@ -2200,6 +2357,7 @@ export function App() {
               <Trash size={16} weight="bold" aria-hidden="true" />
             </button>
           </div>
+          <WinStreakBadge value={winStreak} />
         </div>
 
         <button type="button" className="deal-button" onClick={startRound} disabled={selectedBet <= 0 || ROUND_LOCKED_PHASES.includes(game.phase)}>
@@ -2217,59 +2375,126 @@ export function App() {
             {isAdvanceMode && advanceDecision === "stand" ? "STAND QUEUED" : "STAND"}
           </button>
           <button type="button" className={`${freeDouble ? "free-action" : ""}${advanceDecision === "double" ? " is-queued" : ""}`} onClick={() => handleDecision("double")} disabled={!canDouble} aria-pressed={isAdvanceMode ? advanceDecision === "double" : undefined}>
+            {freeDouble && <span className="free-bet-badge"><Lightning size={10} weight="fill" /> FREE BET</span>}
             <PokerChip size={20} weight="duotone" aria-hidden="true" />
             {isAdvanceMode && advanceDecision === "double" ? "DOUBLE QUEUED" : freeDouble ? "FREE DOUBLE" : "DOUBLE"}
           </button>
           <button type="button" className={`${freeSplit ? "free-action" : ""}${advanceDecision === "split" ? " is-queued" : ""}`} onClick={() => handleDecision("split")} disabled={!canSplit} aria-pressed={isAdvanceMode ? advanceDecision === "split" : undefined}>
+            {freeSplit && <span className="free-bet-badge"><Lightning size={10} weight="fill" /> FREE BET</span>}
             <ArrowsLeftRight size={21} aria-hidden="true" />
             {isAdvanceMode && advanceDecision === "split" ? "SPLIT QUEUED" : freeSplit ? "FREE SPLIT" : "SPLIT"}
           </button>
         </div>
       </section>
 
-      {depositOpen && (
-        <Modal title="Deposit PHP" onClose={() => { if (!depositing) { setDepositOpen(false); setDepositStep("details"); } }} className="deposit-modal">
-          <form onSubmit={submitDeposit}>
-            {depositStep === "details" ? (
+      {cashierOpen && (
+        <Modal title="CLEON Cashier" onClose={() => { if (!cashierProcessing) { setCashierOpen(false); setCashierStep("details"); setCashierReference(""); } }} className="deposit-modal cashier-modal">
+          <form className={cashierStep === "review" && cashierMode === "deposit" ? "is-deposit-request" : ""} onSubmit={submitCashier}>
+            <div className="cashier-mode-tabs" role="tablist" aria-label="Cashier transaction">
+              <button
+                type="button"
+                className={cashierMode === "deposit" ? "is-active" : ""}
+                onClick={() => { setCashierMode("deposit"); setCashierStep("details"); setCashierReference(""); }}
+                role="tab"
+                aria-selected={cashierMode === "deposit"}
+              >
+                <ArrowDown size={17} weight="bold" /> DEPOSIT
+              </button>
+              <button
+                type="button"
+                className={cashierMode === "withdraw" ? "is-active" : ""}
+                onClick={() => { setCashierMode("withdraw"); setCashierStep("details"); setCashierReference(""); }}
+                role="tab"
+                aria-selected={cashierMode === "withdraw"}
+              >
+                <ArrowUp size={17} weight="bold" /> WITHDRAW
+              </button>
+            </div>
+            {cashierStep === "details" ? (
               <>
-                <p className="modal-intro">Choose a Philippine payment channel and the amount to credit to your CLEON PHP balance.</p>
-                <div className="cashier-trust-row"><ShieldCheck size={17} weight="fill" /><span>SECURE CASHIER</span><b>PHP</b><small>INSTANT TABLE CREDIT</small></div>
-                <div className="method-grid" role="radiogroup" aria-label="Deposit method">
-                  {PAYMENT_METHODS.map(({ id, label, helper, Icon, tone }) => (
+                <p className="modal-intro">
+                  {cashierMode === "deposit"
+                    ? "Choose a Philippine channel and generate your payment request."
+                    : "Choose where to send funds from your CLEON PHP balance."}
+                </p>
+                <div className="cashier-trust-row">
+                  <PokerChip size={17} weight="duotone" />
+                  <span>{cashierMode === "withdraw" ? "WITHDRAWABLE BALANCE" : "PHP BALANCE"}</span>
+                  <b>{formatPeso(cashierMode === "withdraw" ? cashierAvailable : walletBalance)}</b>
+                  <small>AVAILABLE</small>
+                </div>
+                <div className="method-grid" role="radiogroup" aria-label={`${cashierMode === "deposit" ? "Deposit" : "Withdrawal"} method`}>
+                  {PAYMENT_METHODS.map(({ id, label, helper, tone, ...provider }) => (
                     <button key={id} type="button" className={`${depositMethod === id ? "is-selected" : ""} provider-${tone}`} onClick={() => { setDepositMethod(id); setDepositAccount(""); }} role="radio" aria-checked={depositMethod === id}>
-                      <span className="provider-icon"><Icon size={25} weight="duotone" aria-hidden="true" /></span>
+                      <span className="provider-icon"><PaymentBrand provider={{ id, label, helper, tone, ...provider }} /></span>
                       <span className="provider-copy"><strong>{label}</strong><small>{helper}</small></span>
                       {depositMethod === id && <CheckCircle size={18} weight="fill" aria-hidden="true" />}
                     </button>
                   ))}
                 </div>
 
-                <label className="account-field">
-                  <span>{depositMethod === "bank" ? "Sending account or mobile number" : `${depositProvider.label} mobile number`}</span>
-                  <div><DeviceMobile size={20} weight="duotone" /><input type="text" inputMode="tel" autoComplete="tel" placeholder="09XX XXX XXXX" value={depositAccount} onChange={(event) => setDepositAccount(event.target.value)} /></div>
-                </label>
+                {cashierMode === "withdraw" && (
+                  <label className="account-field">
+                    <span>Receiving {depositMethod === "bank" ? "bank account or mobile number" : `${depositProvider.label} mobile number`}</span>
+                    <div><PaymentBrand provider={depositProvider} compact /><input type="text" inputMode="tel" autoComplete="tel" placeholder="09XX XXX XXXX" value={depositAccount} onChange={(event) => setDepositAccount(event.target.value)} /></div>
+                  </label>
+                )}
 
                 <label className="amount-field">
-                  <span>Deposit amount</span>
-                  <div><b>₱</b><input type="number" min="100" max="50000" step="100" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} /></div>
+                  <span>{cashierMode === "withdraw" ? "Withdrawal" : "Deposit"} amount · max {formatPeso(cashierMode === "withdraw" ? Math.min(CASHIER_MAX, cashierAvailable) : CASHIER_MAX)}</span>
+                  <div><b>₱</b><input type="number" min="100" max={cashierMode === "withdraw" ? Math.min(CASHIER_MAX, cashierAvailable) : CASHIER_MAX} step="100" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} /></div>
                 </label>
-                <div className="quick-amounts" aria-label="Quick deposit amounts">
-                  {[500, 1000, 2500, 5000].map((amount) => (
-                    <button key={amount} type="button" className={Number(depositAmount) === amount ? "is-selected" : ""} onClick={() => setDepositAmount(amount)}>+{formatPeso(amount).replace(".00", "")}</button>
+                <div className="quick-amounts" aria-label={`Quick ${cashierMode} amounts`}>
+                  {(cashierMode === "withdraw" ? [500, 1000, 5000, 10000] : [1000, 10000, 50000, 250000]).map((amount) => (
+                    <button key={amount} type="button" disabled={cashierMode === "withdraw" && amount > cashierAvailable} className={Number(depositAmount) === amount ? "is-selected" : ""} onClick={() => setDepositAmount(amount)}>{cashierMode === "withdraw" ? "−" : "+"}{formatPeso(amount).replace(".00", "")}</button>
                   ))}
                 </div>
               </>
             ) : (
               <div className="cashier-review">
-                <span className={`review-provider provider-${depositProvider.tone}`}><depositProvider.Icon size={29} weight="duotone" /><b>{depositProvider.label}</b></span>
-                <h3>Confirm your deposit</h3>
-                <dl><div><dt>Credit to</dt><dd>CLEON PHP BALANCE</dd></div><div><dt>From</dt><dd>{depositAccount}</dd></div><div><dt>Deposit</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div><div><dt>Processing fee</dt><dd>₱0.00</dd></div><div className="review-total"><dt>Total</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div></dl>
-                <button type="button" className="cashier-back" onClick={() => setDepositStep("details")} disabled={depositing}>EDIT DETAILS</button>
+                <span className={`review-provider provider-${depositProvider.tone}`}><PaymentBrand provider={depositProvider} compact /><b>{depositProvider.label}</b></span>
+                {cashierMode === "deposit" ? (
+                  <>
+                    <h3>Scan to deposit</h3>
+                    <p className="payment-request-copy">Scan with {depositProvider.label}, or copy the payment link and finish in your wallet app.</p>
+                    <PaymentQr provider={depositProvider} reference={cashierReference} />
+                    <button type="button" className="payment-link-card" onClick={copyDepositLink}>
+                      <LinkSimple size={19} weight="bold" aria-hidden="true" />
+                      <span><small>PAYMENT LINK</small><strong>{cashierReference}</strong></span>
+                      <Copy size={17} weight="bold" aria-hidden="true" />
+                    </button>
+                    <div className="deposit-request-total"><span>AMOUNT TO PAY</span><strong>{formatPeso(Number(depositAmount) || 0)}</strong></div>
+                  </>
+                ) : (
+                  <>
+                    <h3>Confirm your withdrawal</h3>
+                    <dl>
+                      <div><dt>Debit from</dt><dd>CLEON PHP BALANCE</dd></div>
+                      <div><dt>Send to</dt><dd>{depositAccount}</dd></div>
+                      <div><dt>Withdrawal</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div>
+                      <div><dt>Processing fee</dt><dd>₱0.00</dd></div>
+                      <div className="review-total"><dt>Total</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div>
+                    </dl>
+                  </>
+                )}
+                <button type="button" className="cashier-back" onClick={() => setCashierStep("details")} disabled={cashierProcessing}>EDIT DETAILS</button>
               </div>
             )}
-            <button type="submit" className="cashier-submit" disabled={depositing}>
-              {depositing ? <SpinnerGap className="spinner" size={22} aria-hidden="true" /> : <ShieldCheck size={22} weight="duotone" aria-hidden="true" />}
-              {depositing ? "PROCESSING DEPOSIT" : depositStep === "details" ? "CONTINUE SECURELY" : `CONFIRM ${formatPeso(Number(depositAmount) || 0)}`}
+            <button type="submit" className={`cashier-submit is-${cashierMode}`} disabled={cashierProcessing}>
+              {cashierProcessing
+                ? <SpinnerGap className="spinner" size={22} aria-hidden="true" />
+                : cashierMode === "withdraw"
+                  ? <ArrowUp size={22} weight="bold" aria-hidden="true" />
+                  : cashierStep === "review"
+                    ? <QrCode size={22} weight="bold" aria-hidden="true" />
+                    : <ArrowDown size={22} weight="bold" aria-hidden="true" />}
+              {cashierProcessing
+                ? `PROCESSING ${cashierMode.toUpperCase()}`
+                : cashierStep === "details"
+                  ? "CONTINUE"
+                  : cashierMode === "withdraw"
+                    ? `CONFIRM ${formatPeso(Number(depositAmount) || 0)}`
+                    : `I'VE PAID · CREDIT ${formatPeso(Number(depositAmount) || 0)}`}
             </button>
           </form>
         </Modal>

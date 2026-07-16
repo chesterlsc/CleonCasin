@@ -87,6 +87,18 @@ export function soloBettingExpiry(mainBet = 0) {
   };
 }
 
+export function winStreakFromHistory(history = []) {
+  let streak = 0;
+
+  for (const round of history) {
+    const net = Number(round?.net || 0);
+    if (net < 0) break;
+    if (net > 0) streak += 1;
+  }
+
+  return streak;
+}
+
 export function hiLoCountValue(card) {
   if (!card) return 0;
   if (["2", "3", "4", "5", "6"].includes(card.rank)) return 1;

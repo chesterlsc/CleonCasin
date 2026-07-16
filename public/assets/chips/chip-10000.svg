@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="10000 peso casino chip">
+  <defs>
+    <radialGradient id="face" cx="50%" cy="38%" r="66%"><stop offset="0" stop-color="#b25ecb"/><stop offset=".61" stop-color="#672479"/><stop offset="1" stop-color="#2c0b38"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e1a8ee"/><stop offset=".45" stop-color="#843c98"/><stop offset="1" stop-color="#351043"/></linearGradient>
+    <radialGradient id="core"><stop stop-color="#6d2b7c"/><stop offset="1" stop-color="#260b31"/></radialGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-opacity=".48"/></filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <circle cx="128" cy="128" r="118" fill="url(#rim)" stroke="#1c0624" stroke-width="4"/>
+    <circle cx="128" cy="128" r="107" fill="url(#face)" stroke="#f7dcff" stroke-opacity=".7" stroke-width="2"/>
+    <g fill="#f2d47f" stroke="#684b16" stroke-width="1.5">
+      <rect x="116" y="10" width="24" height="43" rx="4"/><rect x="116" y="203" width="24" height="43" rx="4"/>
+      <rect x="116" y="10" width="24" height="43" rx="4" transform="rotate(60 128 128)"/><rect x="116" y="203" width="24" height="43" rx="4" transform="rotate(60 128 128)"/>
+      <rect x="116" y="10" width="24" height="43" rx="4" transform="rotate(120 128 128)"/><rect x="116" y="203" width="24" height="43" rx="4" transform="rotate(120 128 128)"/>
+    </g>
+    <circle cx="128" cy="128" r="79" fill="#2b0d36" stroke="#f2d47f" stroke-width="4"/>
+    <circle cx="128" cy="128" r="70" fill="url(#core)" stroke="#c87ddd" stroke-width="2"/>
+    <g fill="none" stroke="#e2afea" stroke-opacity=".22" stroke-width="1.5">
+      <circle cx="128" cy="128" r="62"/><circle cx="128" cy="128" r="57"/>
+      <path d="M128 66v124M66 128h124M84 84l88 88M172 84l-88 88"/>
+    </g>
+    <text x="128" y="139" text-anchor="middle" fill="#fff8e8" stroke="#1c0724" stroke-width="3" paint-order="stroke" font-family="Georgia,serif" font-size="38" font-weight="700">10000</text>
+    <text x="128" y="166" text-anchor="middle" fill="#f2d47f" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="3">CLEON</text>
+  </g>
+</svg>

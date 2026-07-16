@@ -39,6 +39,16 @@ When implementing from a selected generated mock, treat that image as the source
 - CLEON ONE's waiting-for-bets state should use the supplied Evolution-style reference: a large centered `PLACE YOUR BETS` callout, horizontal countdown rail, and compact casino chip rack.
 - Main and side-bet circles should use thin warm-gold outlines, transparent felt interiors, compact heavy display lettering, and the exact tight spacing of the supplied live-table references.
 - The cashier should feel like a Philippine casino deposit sheet with GCash, Maya, and online-banking choices, while remaining a local simulated balance flow until real payment infrastructure is separately scoped.
+- Show positive settlements in a compact centered Evolution-style `TOTAL WIN` popup. It displays the total returned amount, never the balance, pauses the solo betting prompt while visible, and must stay clear of the player hand and controls. Pushes and losses remain in the table status/toast layer.
+- The cashier supports both deposits and withdrawals and uses authentic GCash, Maya, and QR Ph marks. Keep it locally simulated until payment infrastructure is separately scoped, but do not show a cashier-preview or simulation warning in the player-facing modal.
+- Deposit requests never ask for a sending phone number. After the provider and amount are chosen, show a provider-branded QR/payment-link screen; reserve phone or account entry for withdrawals. The cashier summary row should foreground the PHP balance rather than a `LOCAL SIMULATION` label.
+- Cap the main wager at ₱250,000 and each individual side bet at ₱10,000.
+- Use the visible chip rack denominations ₱100, ₱250, ₱500, ₱1,000, ₱2,500, ₱5,000, and ₱10,000. Every main, side-bet, and seat wager stack must show an explicit chip-count badge in addition to the total peso amount.
+- In Free Bet mode, every eligible Free Double or Free Split decision must be unmistakable with a prominent `FREE BET` badge and highlighted action treatment.
+- On mobile, keep the dealer hand fully below the decorative chip rack and use compact dealer/AI move notifications so cards and table status never collide.
+- Mobile decision controls must span the usable table width with four balanced, premium action buttons and no inherited empty grid column.
+- Resolve and announce Hot 3, 21+3, and Perfect Pairs wins immediately after the opening deal; Bust It announces as soon as the dealer result makes it final.
+- Show a trophy win-streak counter below the betting chip rack. Positive-net rounds increment it, pushes preserve it, and negative-net rounds reset it.
 - The revenue-stat panel must offer a downloadable saved snapshot and a guarded reset action. Reset clears revenue and round history while preserving the deposit ledger.
 - If the ledger API is unavailable, preserve the optimistic in-session round record silently. Never interrupt settlement with a save-failed, retry-save, or ledger-sync popup.
 - The center betting rail should follow the supplied five-circle live-table reference: functional Hot 3 and Bust It as smaller outer wager circles, functional 21+3 and Perfect Pairs circles inside them, and a larger central chip circle, all rendered as true circles with tight horizontal spacing while preserving CLEON's graphite-and-warm-gold palette.
