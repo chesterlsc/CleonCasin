@@ -3454,11 +3454,13 @@ input:focus-visible {
   body { overflow: hidden; }
 
   .casino-app {
+    --mobile-topbar-height: clamp(86px, 12dvh, 100px);
+    --mobile-dock-height: clamp(106px, 15dvh, 124px);
     width: 100%;
     min-width: 0;
     min-height: 0;
     height: 100dvh;
-    grid-template-rows: 100px minmax(390px, 1fr) 124px;
+    grid-template-rows: var(--mobile-topbar-height) minmax(0, 1fr) var(--mobile-dock-height);
     overflow: hidden;
   }
 
@@ -3466,7 +3468,7 @@ input:focus-visible {
   .casino-app.phase-ai-turn,
   .casino-app.phase-playing,
   .casino-app.phase-dealer {
-    grid-template-rows: 100px minmax(390px, 1fr) 0;
+    grid-template-rows: var(--mobile-topbar-height) minmax(0, 1fr) 0;
   }
 
   .casino-app.phase-dealing > .control-dock,
@@ -3479,8 +3481,8 @@ input:focus-visible {
   .topbar {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
-    gap: 8px 12px;
-    padding: 10px 12px;
+    gap: clamp(4px, 1dvh, 8px) 10px;
+    padding: clamp(5px, 1dvh, 10px) 12px;
   }
 
   .menu-button {
@@ -3494,7 +3496,7 @@ input:focus-visible {
   .topbar-brand-button {
     min-width: 38px;
     width: 38px;
-    height: 42px;
+    height: clamp(36px, 5dvh, 42px);
     padding: 0;
   }
 
@@ -3506,7 +3508,7 @@ input:focus-visible {
   .balance-panel {
     width: min(100%, 174px);
     min-width: 0;
-    height: 42px;
+    height: clamp(36px, 5dvh, 42px);
     padding: 5px 9px 5px 11px;
   }
 
@@ -3523,7 +3525,7 @@ input:focus-visible {
     grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
-    height: 38px;
+    height: clamp(30px, 4.5dvh, 38px);
   }
 
   .topbar-actions .icon-button {
@@ -3533,14 +3535,14 @@ input:focus-visible {
   .topbar-history { display: none; }
 
   .topbar-actions .sound-button {
-    width: 42px;
-    height: 42px;
+    width: clamp(36px, 5dvh, 42px);
+    height: clamp(36px, 5dvh, 42px);
     display: inline-grid;
   }
 
   .deposit-button {
     min-width: 94px;
-    height: 42px;
+    height: clamp(36px, 5dvh, 42px);
     padding-inline: 13px;
   }
 
@@ -3549,7 +3551,7 @@ input:focus-visible {
     grid-template-columns: 1fr;
     grid-template-areas: "bet" "deal";
     gap: 5px;
-    padding: 6px 10px;
+    padding: clamp(4px, 0.8dvh, 6px) 10px;
   }
 
   .bet-controls {
@@ -3576,7 +3578,7 @@ input:focus-visible {
 
   .chip-button {
     width: clamp(31px, 9.6vw, 42px);
-    height: 45px;
+    height: clamp(39px, 6dvh, 45px);
     padding-block: 0;
     touch-action: none;
   }
@@ -3611,7 +3613,7 @@ input:focus-visible {
 
   .deal-button {
     width: min(100%, 330px);
-    height: 40px;
+    height: clamp(36px, 5dvh, 40px);
     justify-self: center;
     border-radius: 8px;
     font-size: 12px;
@@ -3670,7 +3672,7 @@ input:focus-visible {
     top: 76%;
     left: 50%;
     transform: translate(-50%, -50%);
-    gap: 3px;
+    gap: clamp(1px, 0.8vw, 3px);
   }
 
   .table-win-streak {
@@ -3678,25 +3680,25 @@ input:focus-visible {
   }
 
   .betting-spot {
-    width: 66px;
-    height: 66px;
+    width: clamp(58px, 18.35vw, 66px);
+    height: clamp(58px, 18.35vw, 66px);
     padding: 0;
   }
 
   .main-bet-circle {
-    width: 84px;
-    height: 84px;
+    width: clamp(74px, 23.35vw, 84px);
+    height: clamp(74px, 23.35vw, 84px);
   }
 
   .table-bonus-mark {
-    width: 56px;
-    height: 56px;
+    width: clamp(50px, 15.55vw, 56px);
+    height: clamp(50px, 15.55vw, 56px);
   }
 
   .spot-hot-three,
   .spot-bust-it {
-    width: 56px;
-    height: 56px;
+    width: clamp(50px, 15.55vw, 56px);
+    height: clamp(50px, 15.55vw, 56px);
   }
 
   .spot-hot-three .betting-spot-ring > svg {
@@ -3785,7 +3787,7 @@ input:focus-visible {
   }
 
   .dealer-zone {
-    top: 112px;
+    top: clamp(78px, 13dvh, 112px);
     transform: translateX(-50%) scale(0.78);
     transform-origin: top center;
   }
@@ -4143,27 +4145,37 @@ input:focus-visible {
     width: min(100% - 28px, 560px);
     min-height: 0;
     grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 45px 0 30px;
+    gap: 10px;
+    padding: 26px 0 18px;
   }
 
-  .lobby-hero h1 { font-size: clamp(43px, 13vw, 64px); }
-  .lobby-hero-copy > p { font-size: 13px; }
+  .lobby-hero-copy { gap: 14px; }
+  .lobby-hero h1 { font-size: clamp(38px, 11.5vw, 52px); }
+  .lobby-hero-copy > p { font-size: 12px; line-height: 1.5; }
 
   .lobby-hero .live-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .lobby-brand-orbit { min-height: 245px; }
-  .lobby-brand-orbit img { width: 190px; height: 190px; }
-  .lobby-brand-orbit .orbit { width: 220px; height: 220px; }
-  .lobby-brand-orbit .orbit-two { width: 275px; height: 165px; }
+  .lobby-brand-orbit { min-height: 104px; }
+  .lobby-brand-orbit img { width: 94px; height: 94px; }
+  .lobby-brand-orbit .orbit { width: 112px; height: 112px; }
+  .lobby-brand-orbit .orbit-two { width: 154px; height: 92px; }
+  .lobby-brand-orbit > b { right: 20%; bottom: 2%; }
 
-  .lobby-tables { width: min(100% - 28px, 560px); padding-bottom: 45px; }
+  .casino-lobby {
+    min-height: 0;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    scroll-padding-block: 68px 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lobby-tables { width: min(100% - 28px, 560px); padding: 12px 0 36px; }
   .lobby-section-heading { align-items: start; flex-direction: column; gap: 4px; }
   .lobby-section-heading p { margin: 0; }
-  .table-card-grid { grid-template-columns: 1fr; }
-  .lobby-table-card { grid-template-columns: 38% 62%; min-height: 290px; }
+  .table-card-grid { min-width: 0; grid-template-columns: 1fr; }
+  .lobby-table-card { width: 100%; min-width: 0; grid-template-columns: 38% 62%; min-height: 290px; }
   .table-card-content { padding: 21px; }
   .table-card-content h3 { font-size: 25px; }
   .table-card-preview { min-height: 220px; }
@@ -4171,7 +4183,7 @@ input:focus-visible {
 
 @media (max-width: 760px) {
   .casino-app.is-solo-betting {
-    grid-template-rows: 100px minmax(390px, 1fr) 76px;
+    grid-template-rows: var(--mobile-topbar-height) minmax(0, 1fr) clamp(62px, 9dvh, 76px);
   }
 
   .solo-betting-prompt {
@@ -4296,6 +4308,63 @@ input:focus-visible {
     grid-template-columns: auto 1fr auto;
     align-content: center;
     gap: 10px;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 700px) {
+  .lobby-hero {
+    gap: 0;
+    padding: 18px 0 8px;
+  }
+
+  .lobby-hero-copy {
+    gap: 10px;
+  }
+
+  .lobby-hero h1 {
+    font-size: clamp(34px, 10.5vw, 42px);
+  }
+
+  .lobby-brand-orbit {
+    display: none;
+  }
+
+  .lobby-tables {
+    padding-top: 6px;
+  }
+
+  .lobby-section-heading {
+    margin-bottom: 10px;
+  }
+
+  .dealer-zone {
+    top: 72px;
+    transform: translateX(-50%) scale(0.68);
+  }
+
+  .casino-app:not(.is-solo-betting) .table-brand,
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-brand {
+    top: 36%;
+  }
+
+  .casino-app:not(.is-solo-betting) .table-rules,
+  .casino-app:not(.phase-settled):not(.is-solo-betting) .table-rules {
+    top: calc(36% + 56px);
+  }
+
+  .table-seat.role-you,
+  .table-seat.role-you:hover,
+  .table-solo .table-seat.role-you,
+  .table-solo .table-seat.role-you:hover {
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+
+  .table-message {
+    top: 12px;
+  }
+
+  .table-stage > .live-stats {
+    top: 46px;
   }
 }
 
