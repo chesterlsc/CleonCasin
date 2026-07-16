@@ -1,0 +1,42 @@
+# Prototype Instructions
+
+Run the local server yourself and open the preview in the browser available to this environment. Do not give the user server-start instructions when you can run it.
+
+Before making substantial visual changes, use the Product Design plugin's `get-context` skill when the visual source is unclear or no longer matches the current goal. When the user gives durable prototype-specific design feedback, preferences, or decisions, record them in `AGENTS.md`.
+
+When implementing from a selected generated mock, treat that image as the source of truth for layout, component anatomy, density, spacing, color, typography, visible content, and hierarchy.
+
+## Approved Blackjack Direction
+
+- Use the selected Carbon Club Arena direction: charcoal and midnight navy, graphite felt, matte black rail, crisp white cards, coral primary action, mint secondary actions, and blue for the active human seat.
+- Show the bankroll as a Philippine-peso balance. Do not use the phrase "practice credits."
+- Include a casino-style Deposit flow, but keep it local and simulated unless real payment infrastructure is explicitly requested and scoped later.
+- Support both Classic and Free Bet Blackjack. Free Bet should surface qualifying Free Double and Free Split actions and the dealer-22-push rule.
+- Casino chips must be highly visible, denomination-specific rendered assets with a clear add, undo, and clear flow; placed table wagers must use large physical chip stacks on desktop and mobile rather than tiny markers.
+- Never expose the dealer's full hand total while the hole card is face-down. Show a neutral hidden state until the reveal sequence begins.
+- Card dealing should feel theatrical and dimensional: stage cards from the shoe to each seat, stagger arrivals, flip the hole card, and animate dealer hits while respecting reduced-motion preferences.
+- Brand the product and felt as `CLEON CASINO BLACKJACK` using the approved gold, platinum, and graphite C-and-crown emblem while preserving the graphite Carbon Club visual system. The full emblem and `CLEON CASINO · BLACKJACK` lockup must remain visibly placed in the table stage at compact desktop and mobile breakpoints without covering hands or rules; never reduce mobile branding to an absent or barely visible mark.
+- Support four functional Evolution-style side bets. 21+3 pays 5:1, 10:1, 30:1, 40:1, or 100:1; Perfect Pairs pays 6:1, 12:1, or 25:1; Hot 3 pays 1:1 for 19, 2:1 for 20, 4:1 for 21, 20:1 for suited 21, and 100:1 for 7-7-7; Bust It pays 1:1, 2:1, 9:1, 50:1, 100:1, or 250:1 for dealer busts using 3, 4, 5, 6, 7, or 8+ cards, and pushes when the player has Blackjack.
+- Chips must support drag-and-drop from the rack to the human main-bet circle or any side-bet spot, with tap/click placement retained as a mobile and accessibility fallback. A side bet requires a main wager.
+- Publish each player's running total as the opening cards physically arrive: show the first-card value after card one lands, then the full hand total after card two lands. Keep the dealer total hidden while the hole card is face-down.
+- Settlement uses a compact, non-overlapping Evolution-style result banner only for positive results or Blackjack. It must not cover the player hand, wager rail, or controls; pushes and losses stay in the table status/toast layer without an interruptive popup. The banner shows the result title and total returned amount (original funded wager plus profit), never the PHP balance and never profit alone.
+- A dealer win must remain in the table status layer only and must never create a floating toast over the deal/action controls.
+- Mobile is a focused dealer-versus-player experience: show only the human seat and dealer and keep the primary controls in one viewport. Human-participating rounds do not spend deal-animation time on hidden AI seats; no-wager spectator rounds may simulate the hidden shared-table players so the live round still continues.
+- Deal pacing must be player-controlled with slow, normal, and turbo modes, and card arrivals should use a short physical swish-and-slap sound rather than generic electronic beeps.
+- Keep side-bet circles grouped around the central main-bet circle, expose a persistent PHP wager ledger with total wins and net revenue, and provide both the six-seat 10-second arena and focused 12-second solo lobby.
+- Match the approved live-table placement reference: the human hand sits directly above a horizontal Hot 3 / 21+3 / main-bet / Perfect Pairs / Bust It row, with the hand total in a light pill to the left of the cards and no duplicate player wager stack obscuring the row.
+- Keep that center composition compact like the Evolution reference: two-card hands use a diagonal lower-left / upper-right overlap, the total pill is detached to the left, side-bet targets are small logo-sized ovals, and the main target carries the chip icon without a large human-seat halo.
+- In CLEON ONE, restart the full 12-second timer after every unresolved Hit or Split decision. In CLEON ROYALE, AI seats act one decision at a time with visible Hit/Stand feedback and a fresh 10-second window per decision.
+- In CLEON ONE, a timed-out decision follows Evolution-style automatic play: auto-Hit totals of 11 or lower, auto-Stand totals of 12 or higher, and restart the full 12-second timer after every unresolved automatic Hit.
+- CLEON ROYALE allows the human player to queue an advance Hit, Stand, Double, or Split while AI seats act; the queued move executes automatically when the human turn begins.
+- Opening cards and player turns travel through occupied seats from the visually rightmost seat to the left, with the dealer last on each opening pass. The human acts when that physical sequence reaches their seat and is never forced to act after every AI seat merely because they are human.
+- Never display a `BLACKJACK` hand label, table message, or win banner until every opening card, including the dealer's second card, has finished arriving.
+- Natural Blackjack behavior is lobby-specific. In CLEON ROYALE it closes only that player's decisions while the remaining players and dealer finish the shared round. In CLEON ONE the dealer reveals the existing hole card, draws no additional cards, and settles immediately after that check. A natural pays 3:2 and pushes only against a dealer two-card natural.
+- When the CLEON ONE betting timer expires, always start the table round. If the human has a valid main wager, include the human hand automatically; with no human wager, run a spectator round for the other table players and dealer instead of resetting the betting timer. Spectator rounds must render the other players' visible cards and decisions on desktop and mobile even though the human has no hand.
+- A natural blackjack or any completed total of 21 must close that hand immediately; never present Hit, Double, or Split controls for an already-complete hand.
+- Table settings must offer 2-, 6-, and 8-deck shoes, an optional visible Hi-Lo card count, and a collapsible revenue/stat panel.
+- CLEON ONE's waiting-for-bets state should use the supplied Evolution-style reference: a large centered `PLACE YOUR BETS` callout, horizontal countdown rail, and compact casino chip rack.
+- Main and side-bet circles should use thin warm-gold outlines, transparent felt interiors, compact heavy display lettering, and the exact tight spacing of the supplied live-table references.
+- The cashier should feel like a Philippine casino deposit sheet with GCash, Maya, and online-banking choices, while remaining a local simulated balance flow until real payment infrastructure is separately scoped.
+- The revenue-stat panel must offer a downloadable saved snapshot and a guarded reset action. Reset clears revenue and round history while preserving the deposit ledger.
+- The center betting rail should follow the supplied five-circle live-table reference: functional Hot 3 and Bust It as smaller outer wager circles, functional 21+3 and Perfect Pairs circles inside them, and a larger central chip circle, all rendered as true circles with tight horizontal spacing while preserving CLEON's graphite-and-warm-gold palette.

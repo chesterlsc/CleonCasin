@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.npm-cache/
+.data/
+.npmrc
+MIGRATION_REPORT.md
+tmp/
+.DS_Store
+npm-debug.log*
