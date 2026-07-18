@@ -53,6 +53,7 @@ import {
   dealerShouldHit,
   evaluate21Plus3,
   evaluateBustIt,
+  evaluateFreeBetSideBet,
   evaluateHotThree,
   evaluatePerfectPairs,
   formatPeso,
@@ -68,8 +69,10 @@ import {
   qualifiesFreeDouble,
   qualifiesFreeSplit,
   rightToLeftSeatIndices,
+  sideBetMultiplierLabel,
   sideBetReturn,
   soloBettingExpiry,
+  soloParticipantIndices,
   timeoutDecision,
   winStreakFromHistory,
 } from "./game.js";
@@ -210,8 +213,9 @@ function BetStack({ values, total, compact = false }) {
   );
 }
 
-function BettingSpot({ id, label, odds, Icon, values, total, result, dragging, disabled, onPlace, onClear }) {
+function BettingSpot({ id, label, odds, Icon, values, total, result, announcing, dragging, disabled, onPlace, onClear }) {
   const interactive = !disabled;
+  const multiplierLabel = announcing ? sideBetMultiplierLabel(result?.result) : null;
 
   return (
     <div
@@ -242,30 +246,23 @@ function BettingSpot({ id, label, odds, Icon, values, total, result, dragging, d
           <strong>
             {label === "PERFECT PAIRS" ? <>PERFECT<br />PAIRS</>
               : label === "BUST IT" ? <>BUST<br />IT</>
+                : label === "FREE BET" ? <>FREE<br />BET</>
                 : label}
           </strong>
           <span>{odds}</span>
         </span>
         {total > 0 ? <BetStack values={values} total={total} compact /> : <small>DROP CHIP</small>}
-        {result?.stake > 0 && (
-          <b className={`side-bet-result${result.result?.push ? " is-push" : result.returned > 0 ? " is-win" : ""}`}>
-            <span className="side-bet-result-full">
-              {result.result?.push
-                ? "PUSH · BET RETURNED"
-                : result.returned > 0
-                  ? `${result.result.label} +${formatPeso(result.returned - result.stake)}`
-                  : "NO WIN"}
-            </span>
-            <span className="side-bet-result-compact">
-              {result.result?.push
-                ? "PUSH"
-                : result.returned > 0
-                  ? `WIN +${formatPeso(result.returned - result.stake).replace(".00", "")}`
-                  : "NO WIN"}
-            </span>
-          </b>
-        )}
       </button>
+      {multiplierLabel && (
+        <span
+          className="side-bet-multiplier"
+          role="status"
+          aria-live="polite"
+          aria-label={`${label} wins ${result.result.odds} to 1`}
+        >
+          {multiplierLabel}
+        </span>
+      )}
       {total > 0 && interactive && (
         <button
           type="button"
@@ -312,6 +309,7 @@ const INITIAL_GAME = {
   activeSeat: null,
   activeHand: 0,
   round: 0,
+  freeBetTokens: 0,
   sideBets: emptySideBets(),
 };
 
@@ -540,7 +538,7 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
       <section className="lobby-tables" aria-label="Cleopatra blackjack tables">
         <div className="lobby-section-heading">
           <div><span>LIVE NOW</span><h2>Blackjack tables</h2></div>
-          <p>Both tables include Hot 3, 21+3, Perfect Pairs, and Bust It side bets.</p>
+          <p>Tables include Hot 3, 21+3, Perfect Pairs, plus Bust It or the Free Bet token wager.</p>
         </div>
         <div className="table-card-grid">
           {tables.map((table) => (
@@ -669,6 +667,8 @@ function SeatSelector({ activeRole, onChoose }) {
 function Seat({ seat, index, game, selected, onSelect, onRoleChange, pendingBet, pendingChips, draggingChip, onBetDrop, decisionSeconds, decisionLimit }) {
   const active = game.activeSeat === index;
   const canConfigure = ["betting", "settled"].includes(game.phase);
+  const isSoloAutoplay = Boolean(game.spectator && seat.role === "you");
+  const seatName = isSoloAutoplay ? "Solo Player" : seat.name;
   const roundStake = seat.hands.reduce((sum, hand) => sum + (hand.paidStake || 0) + (hand.freeStake || 0), 0);
   const shownBet = seat.role === "you" && canConfigure
     ? pendingBet
@@ -702,7 +702,7 @@ function Seat({ seat, index, game, selected, onSelect, onRoleChange, pendingBet,
         const value = Number(event.dataTransfer.getData("application/x-blackjack-chip") || event.dataTransfer.getData("text/plain"));
         if (Number.isFinite(value)) onBetDrop(value);
       }}
-      aria-label={`${seat.name} seat. ${seat.role}. ${canConfigure ? "Select to change occupant." : "Seat is locked during the round."}`}
+      aria-label={`${seatName} seat. ${isSoloAutoplay ? "automatic" : seat.role}. ${canConfigure ? "Select to change occupant." : "Seat is locked during the round."}`}
       data-seat={index}
     >
       {seat.role === "empty" ? (
@@ -725,14 +725,14 @@ function Seat({ seat, index, game, selected, onSelect, onRoleChange, pendingBet,
             ))}
           </div>
           <div className="seat-identity">
-            <strong>{seat.name}</strong>
-            <span>{seat.role === "you" ? "YOU" : "AI"}</span>
+            <strong>{seatName}</strong>
+            <span>{isSoloAutoplay ? "AUTO" : seat.role === "you" ? "YOU" : "AI"}</span>
           </div>
           <div className="seat-bet">
             <BetStack values={shownChips} total={shownBet} compact />
           </div>
           {active && ["ai-turn", "playing"].includes(game.phase) && (
-            <DecisionClock seconds={decisionSeconds} limit={decisionLimit} label={seat.role === "you" ? "YOUR MOVE" : "AI WINDOW"} />
+            <DecisionClock seconds={decisionSeconds} limit={decisionLimit} label={isSoloAutoplay ? "AUTO PLAY" : seat.role === "you" ? "YOUR MOVE" : "AI WINDOW"} />
           )}
         </>
       )}
@@ -856,6 +856,7 @@ export function App() {
   const walletBalanceRef = useRef(10250);
   const runningCountRef = useRef(0);
   const selectedBet = useMemo(() => betStack.reduce((sum, value) => sum + value, 0), [betStack]);
+  const usesFreeBetSideBet = tableVariant === "solo" && mode === "freebet";
   const sideBetTotals = useMemo(() => Object.fromEntries(
     SIDE_BET_KEYS.map((key) => [key, (sideBetStacks[key] ?? []).reduce((sum, value) => sum + value, 0)]),
   ), [sideBetStacks]);
@@ -1056,8 +1057,14 @@ export function App() {
   const enterTable = (variant) => {
     if (ROUND_LOCKED_PHASES.includes(gameRef.current.phase)) return;
     const next = copyGame(gameRef.current);
+    const changesOuterSideBet = usesFreeBetSideBet !== (variant === "solo" && mode === "freebet");
     const humanIndex = Math.max(0, next.seats.findIndex((seat) => seat.role === "you"));
     next.dealer = { cards: [], hidden: false, totalHidden: false };
+    next.freeBetTokens = 0;
+    if (changesOuterSideBet) {
+      next.sideBets.bustIt = { stake: 0, result: null, returned: 0 };
+      setSideBetStacks((stacks) => ({ ...stacks, bustIt: [] }));
+    }
     if (variant === "solo") {
       next.seats = next.seats.map((seat, index) => ({
         ...seat,
@@ -1170,7 +1177,7 @@ export function App() {
       if (!sideBet?.stake || sideBet.returned <= sideBet.stake || !sideBet.result?.label) return [];
       return [{
         key,
-        label: SIDE_BET_LABELS[key],
+        label: sideBet.result.wagerLabel ?? SIDE_BET_LABELS[key],
         result: sideBet.result.label,
         profit: sideBet.returned - sideBet.stake,
       }];
@@ -1428,7 +1435,7 @@ export function App() {
       return;
     }
 
-    if (sourceSeat.role === "you") {
+    if (sourceSeat.role === "you" && !baseGame.spectator) {
       const ready = copyGame(baseGame);
       roundTurnOrderRef.current = [...orderedSeatIndices];
       roundTurnPositionRef.current = position;
@@ -1452,10 +1459,13 @@ export function App() {
 
     const deciding = copyGame(baseGame);
     const seat = deciding.seats[seatIndex];
+    const actorLabel = deciding.spectator && seat.role === "you" ? "SOLO PLAYER" : seat.name.toUpperCase();
     deciding.phase = "ai-turn";
     deciding.activeSeat = seatIndex;
     deciding.activeHand = activeHandIndex;
-    deciding.message = `${seat.name.toUpperCase()} DECIDING · 10 SECOND WINDOW`;
+    deciding.message = deciding.spectator && seat.role === "you"
+      ? `${actorLabel} AUTOPLAY`
+      : `${actorLabel} DECIDING · 10 SECOND WINDOW`;
     setDecisionSeconds(10);
     commitGame(deciding);
 
@@ -1475,6 +1485,7 @@ export function App() {
       let aiMotionOrder = 0;
       const aiDealCard = () => drawWithMotion(aiMotionOrder++);
       const decision = aiDecision(hand.cards, decided.dealer.cards[0], mode);
+      const targetLabel = decided.spectator && target.role === "you" ? "SOLO PLAYER" : target.name.toUpperCase();
 
       if (decision === "split" && hand.cards.length === 2) {
         const freeSplit = mode === "freebet" && qualifiesFreeSplit(hand.cards);
@@ -1490,25 +1501,25 @@ export function App() {
           action: freeSplit ? "FREE SPLIT" : "SPLIT",
         }));
         target.hands.splice(activeHandIndex, 1, ...splitHands);
-        decided.message = `${target.name.toUpperCase()} ${freeSplit ? "FREE SPLITS" : "SPLITS"}`;
+        decided.message = `${targetLabel} ${freeSplit ? "FREE SPLITS" : "SPLITS"}`;
       } else if (decision === "double" && hand.cards.length === 2) {
         hand.cards.push(aiDealCard());
         hand.freeStake += hand.bet;
         hand.action = "FREE DOUBLE";
         hand.state = "done";
-        decided.message = `${target.name.toUpperCase()} FREE DOUBLES`;
+        decided.message = `${targetLabel} FREE DOUBLES`;
       } else if (decision === "hit") {
         hand.cards.push(aiDealCard());
         hand.action = "HIT";
         const total = handValue(hand.cards).total;
         if (total >= 21 || isSixCardCharlie(hand.cards, mode)) hand.state = "done";
         decided.message = total > 21
-          ? `${target.name.toUpperCase()} BUSTS`
-          : `${target.name.toUpperCase()} HITS TO ${total}`;
+          ? `${targetLabel} BUSTS`
+          : `${targetLabel} HITS TO ${total}`;
       } else {
         hand.action = "STAND";
         hand.state = "done";
-        decided.message = `${target.name.toUpperCase()} STANDS ON ${handValue(hand.cards).total}`;
+        decided.message = `${targetLabel} STANDS ON ${handValue(hand.cards).total}`;
       }
 
       commitGame(decided);
@@ -1547,7 +1558,7 @@ export function App() {
             const result = compareHand(hand.cards, settled.dealer.cards, mode);
             hand.outcome = result;
             hand.state = "done";
-            if (seat.role === "you") {
+            if (seat.role === "you" && !settled.spectator) {
               returned += payoutFor(hand, result);
               fundedStake += hand.paidStake;
               humanResults.push(result);
@@ -1558,7 +1569,9 @@ export function App() {
         const settlementHumanSeat = settled.seats.find((seat) => seat.role === "you");
         const settlementPlayerCards = settlementHumanSeat?.hands[0]?.cards ?? [];
         if (settled.sideBets.bustIt?.stake) {
-          settled.sideBets.bustIt.result = evaluateBustIt(settled.dealer.cards, settlementPlayerCards);
+          settled.sideBets.bustIt.result = tableVariant === "solo" && mode === "freebet"
+            ? evaluateFreeBetSideBet(settled.freeBetTokens)
+            : evaluateBustIt(settled.dealer.cards, settlementPlayerCards);
         }
 
         const sideBetWins = [];
@@ -1569,7 +1582,9 @@ export function App() {
           returned += sideBet.returned;
           if (sideBet.returned > sideBet.stake) sideBetWins.push(key);
         });
-        announceSideBetWins(settled.sideBets, ["bustIt"]);
+        if (!(tableVariant === "solo" && mode === "freebet")) {
+          announceSideBetWins(settled.sideBets, ["bustIt"]);
+        }
 
         const net = returned - fundedStake;
         const balanceAfter = updateBalance((balance) => balance + returned);
@@ -1581,6 +1596,7 @@ export function App() {
         settled.phase = "settled";
         settled.activeSeat = null;
         settled.activeHand = 0;
+        settled.spectator = false;
         commitGame(settled);
         if (humanResults.length) {
           const kind = net > 0 ? "win" : net === 0 ? "push" : "lose";
@@ -1697,8 +1713,13 @@ export function App() {
     if (shoeRef.current.length < cutCardThreshold) loadShoe(deckCount);
     const next = copyGame(current);
     next.round += 1;
+    next.freeBetTokens = 0;
     next.phase = "dealing";
-    next.message = spectatorRound ? "TABLE ROUND · OTHER PLAYERS ACTIVE" : "DEALING FROM THE SHOE";
+    next.message = spectatorRound && tableVariant === "solo"
+      ? "NO BET · SOLO AUTOPLAY"
+      : spectatorRound
+        ? "TABLE ROUND · OTHER PLAYERS ACTIVE"
+        : "DEALING FROM THE SHOE";
     next.activeSeat = null;
     next.activeHand = 0;
     next.spectator = spectatorRound;
@@ -1708,10 +1729,13 @@ export function App() {
       { stake: spectatorRound ? 0 : sideBetTotals[key], result: null, returned: 0 },
     ]));
 
-    next.seats = next.seats.map((seat) => {
-      const participates = spectatorRound
-        ? seat.role === "ai"
-        : seat.role !== "empty" && (tableVariant === "arena" && !isMobileTable ? true : seat.role === "you");
+    const soloPlayerIndex = soloParticipantIndices(next.seats)[0] ?? -1;
+    next.seats = next.seats.map((seat, index) => {
+      const participates = tableVariant === "solo"
+        ? index === soloPlayerIndex
+        : spectatorRound
+          ? seat.role === "ai"
+          : seat.role !== "empty" && (tableVariant === "arena" && !isMobileTable ? true : seat.role === "you");
       const tableBet = seat.role === "you" ? selectedBet : Math.max(selectedBet, 250);
       return {
         ...seat,
@@ -1810,6 +1834,13 @@ export function App() {
       return;
     }
 
+    if (tableVariant === "solo" && mode === "freebet" && nextGame.sideBets.bustIt?.stake) {
+      const freeBetResult = evaluateFreeBetSideBet(nextGame.freeBetTokens);
+      nextGame.sideBets.bustIt.result = freeBetResult;
+      nextGame.sideBets.bustIt.returned = sideBetReturn(nextGame.sideBets.bustIt.stake, freeBetResult);
+      announceSideBetWins(nextGame.sideBets, ["bustIt"]);
+    }
+
     window.clearInterval(decisionTimerRef.current);
     const orderedSeatIndices = roundTurnOrderRef.current;
     const currentPosition = roundTurnPositionRef.current;
@@ -1867,6 +1898,7 @@ export function App() {
       if (freeDouble) {
         hand.freeStake += hand.bet;
         hand.action = "FREE DOUBLE";
+        if (tableVariant === "solo") next.freeBetTokens = (next.freeBetTokens || 0) + 1;
       } else {
         updateBalance((balance) => balance - hand.bet);
         hand.paidStake += hand.bet;
@@ -1886,6 +1918,7 @@ export function App() {
       }
 
       if (!freeSplit) updateBalance((balance) => balance - hand.bet);
+      else if (tableVariant === "solo") next.freeBetTokens = (next.freeBetTokens || 0) + 1;
       const [firstCard, secondCard] = hand.cards;
       const splitAces = firstCard.rank === "A";
       const firstHand = {
@@ -1962,11 +1995,17 @@ export function App() {
 
   const changeMode = (nextMode) => {
     if (!["betting", "settled"].includes(game.phase)) return;
+    const changesOuterSideBet = usesFreeBetSideBet !== (tableVariant === "solo" && nextMode === "freebet");
     setMode(nextMode);
     const next = copyGame(gameRef.current);
     next.phase = "betting";
     next.message = nextMode === "freebet" ? "FREE BET TABLE" : "CLASSIC TABLE";
     next.activeSeat = null;
+    next.freeBetTokens = 0;
+    if (changesOuterSideBet) {
+      next.sideBets.bustIt = { stake: 0, result: null, returned: 0 };
+      setSideBetStacks((stacks) => ({ ...stacks, bustIt: [] }));
+    }
     commitGame(next);
   };
 
@@ -2203,16 +2242,6 @@ export function App() {
           {game.message}
         </div>
 
-        {sideBetAnnouncement && (
-          <div className="side-bet-announcement" role="status" aria-live="polite">
-            <Trophy size={20} weight="fill" aria-hidden="true" />
-            <span>
-              <small>SIDE BET HIT</small>
-              <strong>{sideBetAnnouncement.wins.map((win) => `${win.label} · ${win.result} +${formatPeso(win.profit)}`).join("  •  ")}</strong>
-            </span>
-          </div>
-        )}
-
         {totalWinPopup && (
           <div className="total-win-popup" role="status" aria-live="assertive">
             <div className="total-win-panel">
@@ -2282,6 +2311,7 @@ export function App() {
             values={sideBetStacks.hotThree}
             total={sideBetTotals.hotThree}
             result={game.phase === "settled" || game.sideBets.hotThree?.returned > game.sideBets.hotThree?.stake ? game.sideBets.hotThree : null}
+            announcing={sideBetAnnouncement?.wins.some((win) => win.key === "hotThree")}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("hotThree", value)}
@@ -2295,6 +2325,7 @@ export function App() {
             values={sideBetStacks.twentyOneThree}
             total={sideBetTotals.twentyOneThree}
             result={game.phase === "settled" || game.sideBets.twentyOneThree?.returned > game.sideBets.twentyOneThree?.stake ? game.sideBets.twentyOneThree : null}
+            announcing={sideBetAnnouncement?.wins.some((win) => win.key === "twentyOneThree")}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("twentyOneThree", value)}
@@ -2330,24 +2361,43 @@ export function App() {
             values={sideBetStacks.perfectPairs}
             total={sideBetTotals.perfectPairs}
             result={game.phase === "settled" || game.sideBets.perfectPairs?.returned > game.sideBets.perfectPairs?.stake ? game.sideBets.perfectPairs : null}
+            announcing={sideBetAnnouncement?.wins.some((win) => win.key === "perfectPairs")}
             dragging={Boolean(draggingChip)}
             disabled={!['betting', 'settled'].includes(game.phase)}
             onPlace={(value) => placeChip("perfectPairs", value)}
             onClear={() => clearSideBet("perfectPairs")}
           />
-          <BettingSpot
-            id="bust-it"
-            label="BUST IT"
-            odds="1:1—250:1"
-            Icon={Seal}
-            values={sideBetStacks.bustIt}
-            total={sideBetTotals.bustIt}
-            result={game.phase === "settled" || game.sideBets.bustIt?.returned > game.sideBets.bustIt?.stake ? game.sideBets.bustIt : null}
-            dragging={Boolean(draggingChip)}
-            disabled={!['betting', 'settled'].includes(game.phase)}
-            onPlace={(value) => placeChip("bustIt", value)}
-            onClear={() => clearSideBet("bustIt")}
-          />
+          {usesFreeBetSideBet ? (
+            <BettingSpot
+              id="free-bet"
+              label="FREE BET"
+              odds="3:1—100:1"
+              Icon={Lightning}
+              values={sideBetStacks.bustIt}
+              total={sideBetTotals.bustIt}
+              result={game.phase === "settled" || game.sideBets.bustIt?.returned > game.sideBets.bustIt?.stake ? game.sideBets.bustIt : null}
+              announcing={sideBetAnnouncement?.wins.some((win) => win.key === "bustIt")}
+              dragging={Boolean(draggingChip)}
+              disabled={!['betting', 'settled'].includes(game.phase)}
+              onPlace={(value) => placeChip("bustIt", value)}
+              onClear={() => clearSideBet("bustIt")}
+            />
+          ) : (
+            <BettingSpot
+              id="bust-it"
+              label="BUST IT"
+              odds="1:1—250:1"
+              Icon={Seal}
+              values={sideBetStacks.bustIt}
+              total={sideBetTotals.bustIt}
+              result={game.phase === "settled" || game.sideBets.bustIt?.returned > game.sideBets.bustIt?.stake ? game.sideBets.bustIt : null}
+              announcing={sideBetAnnouncement?.wins.some((win) => win.key === "bustIt")}
+              dragging={Boolean(draggingChip)}
+              disabled={!['betting', 'settled'].includes(game.phase)}
+              onPlace={(value) => placeChip("bustIt", value)}
+              onClear={() => clearSideBet("bustIt")}
+            />
+          )}
           <div className="table-win-streak">
             <WinStreakBadge value={winStreak} compact />
           </div>
@@ -2642,7 +2692,11 @@ export function App() {
             <div className="side-payout-card"><strong>21+3</strong><p>Flush 5:1 · Straight 10:1 · Trips 30:1 · Straight Flush 40:1 · Suited Trips 100:1.</p></div>
             <div className="side-payout-card"><strong>Perfect Pairs</strong><p>Mixed Pair 6:1 · Colored Pair 12:1 · Perfect Pair 25:1.</p></div>
             <div className="side-payout-card"><strong>Hot 3</strong><p>Total 19 pays 1:1 · 20 pays 2:1 · 21 pays 4:1 · suited 21 pays 20:1 · 7-7-7 pays 100:1.</p></div>
-            <div className="side-payout-card"><strong>Bust It</strong><p>Dealer busts with 3 / 4 / 5 / 6 / 7 / 8+ cards pay 1:1 / 2:1 / 9:1 / 50:1 / 100:1 / 250:1. Player Blackjack pushes.</p></div>
+            {usesFreeBetSideBet ? (
+              <div className="side-payout-card"><strong>Free Bet · Pot of Gold</strong><p>Use 1 / 2 / 3 / 4 / 5 Free Bet tokens to win 3:1 / 10:1 / 30:1 / 60:1 / 100:1. Free Splits and Free Doubles each add one token, even if that hand later busts.</p></div>
+            ) : (
+              <div className="side-payout-card"><strong>Bust It</strong><p>Dealer busts with 3 / 4 / 5 / 6 / 7 / 8+ cards pay 1:1 / 2:1 / 9:1 / 50:1 / 100:1 / 250:1. Player Blackjack pushes.</p></div>
+            )}
           </div>
         </Modal>
       )}

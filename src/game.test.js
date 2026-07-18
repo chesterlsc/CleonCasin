@@ -4,6 +4,7 @@ import {
   compareHand,
   evaluate21Plus3,
   evaluateBustIt,
+  evaluateFreeBetSideBet,
   evaluateHotThree,
   evaluatePerfectPairs,
   handValue,
@@ -15,8 +16,10 @@ import {
   qualifiesFreeDouble,
   qualifiesFreeSplit,
   rightToLeftSeatIndices,
+  sideBetMultiplierLabel,
   sideBetReturn,
   soloBettingExpiry,
+  soloParticipantIndices,
   timeoutDecision,
   winStreakFromHistory,
 } from "./game.js";
@@ -104,6 +107,31 @@ test("Bust It pays by final dealer bust-card count and pushes on player Blackjac
   assert.equal(sideBetReturn(250, bustResult(8, "4")), 62750);
 });
 
+test("Free Bet side bet pays by the number of free tokens used", () => {
+  assert.equal(evaluateFreeBetSideBet(0), null);
+  assert.deepEqual(evaluateFreeBetSideBet(1), {
+    key: "oneToken",
+    label: "1 FREE BET TOKEN",
+    wagerLabel: "FREE BET",
+    tokens: 1,
+    odds: 3,
+  });
+  assert.equal(evaluateFreeBetSideBet(2).odds, 10);
+  assert.equal(evaluateFreeBetSideBet(3).odds, 30);
+  assert.equal(evaluateFreeBetSideBet(4).odds, 60);
+  assert.equal(evaluateFreeBetSideBet(5).odds, 100);
+  assert.equal(evaluateFreeBetSideBet(7).odds, 100);
+  assert.equal(sideBetReturn(250, evaluateFreeBetSideBet(3)), 7750);
+});
+
+test("side bet win badges display the published multiplier", () => {
+  assert.equal(sideBetMultiplierLabel({ odds: 4 }), "×4");
+  assert.equal(sideBetMultiplierLabel({ odds: 25 }), "×25");
+  assert.equal(sideBetMultiplierLabel({ odds: 100 }), "×100");
+  assert.equal(sideBetMultiplierLabel({ odds: 0, push: true }), null);
+  assert.equal(sideBetMultiplierLabel(null), null);
+});
+
 test("opening cards are dealt from the visually rightmost occupied seat to the left", () => {
   const seats = [
     { hands: [{}] },
@@ -153,7 +181,7 @@ test("a natural blackjack uses lobby-specific dealer flow and the standard total
   assert.equal(payoutFor({ paidStake: 250, freeStake: 0 }, "blackjack"), 625);
 });
 
-test("the solo betting timer always starts a table round and uses spectator mode without a wager", () => {
+test("the solo betting timer starts a single-player autoplay round without a wager", () => {
   assert.deepEqual(soloBettingExpiry(250), {
     startRound: true,
     playerParticipates: true,
@@ -164,6 +192,15 @@ test("the solo betting timer always starts a table round and uses spectator mode
     playerParticipates: false,
     spectator: true,
   });
+
+  const seats = [
+    { role: "ai" },
+    { role: "ai" },
+    { role: "you" },
+    { role: "ai" },
+  ];
+  assert.deepEqual(soloParticipantIndices(seats), [2]);
+  assert.deepEqual(soloParticipantIndices([{ role: "ai" }]), []);
 });
 
 test("Evolution-style timeout play hits 11 or lower and stands on 12 or higher", () => {

@@ -36,6 +36,13 @@ export const SIDE_BET_PAYOUTS = {
     sevenCards: 100,
     eightPlusCards: 250,
   },
+  freeBet: {
+    oneToken: 3,
+    twoTokens: 10,
+    threeTokens: 30,
+    fourTokens: 60,
+    fiveTokens: 100,
+  },
 };
 
 export function cardPoint(rank) {
@@ -85,6 +92,11 @@ export function soloBettingExpiry(mainBet = 0) {
     playerParticipates,
     spectator: !playerParticipates,
   };
+}
+
+export function soloParticipantIndices(seats = []) {
+  const playerIndex = seats.findIndex((seat) => seat.role === "you");
+  return playerIndex >= 0 ? [playerIndex] : [];
 }
 
 export function winStreakFromHistory(history = []) {
@@ -229,10 +241,38 @@ export function evaluateBustIt(dealerCards, playerCards = []) {
   };
 }
 
+export function evaluateFreeBetSideBet(freeBetTokens = 0) {
+  const tokenCount = Math.max(0, Math.floor(Number(freeBetTokens) || 0));
+  if (!tokenCount) return null;
+
+  const cappedTokens = Math.min(5, tokenCount);
+  const payout = {
+    1: ["oneToken", SIDE_BET_PAYOUTS.freeBet.oneToken],
+    2: ["twoTokens", SIDE_BET_PAYOUTS.freeBet.twoTokens],
+    3: ["threeTokens", SIDE_BET_PAYOUTS.freeBet.threeTokens],
+    4: ["fourTokens", SIDE_BET_PAYOUTS.freeBet.fourTokens],
+    5: ["fiveTokens", SIDE_BET_PAYOUTS.freeBet.fiveTokens],
+  }[cappedTokens];
+
+  return {
+    key: payout[0],
+    label: `${tokenCount >= 5 ? "5+" : tokenCount} FREE BET ${tokenCount === 1 ? "TOKEN" : "TOKENS"}`,
+    wagerLabel: "FREE BET",
+    tokens: tokenCount,
+    odds: payout[1],
+  };
+}
+
 export function sideBetReturn(stake, result) {
   if (!stake || !result) return 0;
   if (result.push) return stake;
   return stake * (result.odds + 1);
+}
+
+export function sideBetMultiplierLabel(result) {
+  const odds = Number(result?.odds);
+  if (result?.push || !Number.isFinite(odds) || odds <= 0) return null;
+  return `×${odds}`;
 }
 
 export function qualifiesFreeSplit(cards) {
