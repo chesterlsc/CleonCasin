@@ -56,6 +56,8 @@ When implementing from a selected generated mock, treat that image as the source
 - On desktop CLEOPATRA ROYALE, keep that five-circle wager rail compact and low on the felt so it never obscures adjacent AI hands, totals, identities, or wager stacks; CLEOPATRA ONE and mobile may use their separately optimized proportions.
 - In Free Bet mode on CLEOPATRA ONE only, replace the Bust It circle with a `FREE BET` Pot of Gold side wager. Count each Free Split or Free Double actually used as one token even if that hand later busts, and pay 1 / 2 / 3 / 4 / 5+ tokens at 3:1 / 10:1 / 30:1 / 60:1 / 100:1. Keep Bust It in Classic CLEOPATRA ONE and all CLEOPATRA ROYALE modes.
 - Announce side-bet wins with short Evolution-style multiplier badges directly above each winning wager circle, displaying the published odds as `×4`, `×25`, and so on. Never use a global side-bet win banner or a profit pill below the circle; simultaneous wins each receive their own local multiplier badge.
+- Keep Baccarat road-map result rings fully contained inside their grid cells with visible spacing between vertically stacked outcomes. Borders must use border-box sizing so Big Road circles never touch, merge, or overlap at desktop or mobile breakpoints.
+- Match the approved Speed Baccarat concept with a visibly dimensional casino table: a recessed graphite felt bowl, thick sculpted black leather rail, warm bronze inlays and stitching, symmetrical metallic card shoes, deep material shadows, raised wager panels, and a centered vertical CLEOPATRA lockup. Do not flatten the table into a dark background with thin outline rings.
 
 ## Approved Speed Baccarat Direction
 
@@ -79,3 +81,7 @@ When implementing from a selected generated mock, treat that image as the source
 - Speed Baccarat defaults to Cinematic pacing on every fresh table entry.
 - On touch devices, holding the peel control must never select, copy, drag, or expose interface text. Concealed cards must not mount or reveal their rank or suit content until that individual card is peeled.
 - On mobile, isolate the CLEOPATRA felt wordmark from the 3D card layer and preserve a visible gap below every possible three-card hand and peel control so the branding never overlaps or glitches during dealing, peeling, or settlement.
+- Use the selected table-first Baccarat direction: hands and betting answers carry the primary hierarchy, while the five result roads live in a functional premium `ROAD VIEW` drawer integrated into the lower table rail. The drawer opens by default, collapses to a compact persistent strip, and must never cover the hands or wagering controls.
+- Render the Baccarat betting countdown as a centered circular mint progress ring with the remaining seconds in large white type, matching the supplied live-casino timer reference instead of using a horizontal bar.
+- Baccarat road history belongs only to the current physical shoe. Start with empty roads, show the actual shoe number, and clear every road and counter when a replacement shoe begins; never seed the player-facing table with fabricated prior results.
+- On mobile, arrange the six treasure side bets as two compact three-item rows beneath the Player, Tie, and Banker answers so every wager remains legible beside the open road drawer in one viewport.

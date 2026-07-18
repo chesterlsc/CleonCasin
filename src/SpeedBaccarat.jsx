@@ -3,7 +3,10 @@ import {
   ArrowCounterClockwise,
   ArrowLeft,
   ArrowsLeftRight,
+  CaretDown,
+  CaretUp,
   CardsThree,
+  ChartLineUp,
   ClockCounterClockwise,
   Crown,
   DiamondsFour,
@@ -19,7 +22,6 @@ import {
   SpeakerHigh,
   SpeakerSlash,
   Sun,
-  Timer,
   Trash,
   Trophy,
   X,
@@ -74,18 +76,6 @@ const SUIT_MARKS = { spades: "♠", hearts: "♥", diamonds: "♦", clubs: "♣"
 const emptyBets = () => Object.fromEntries(BACCARAT_BET_KEYS.map((key) => [key, []]));
 const totalStack = (stack = []) => stack.reduce((sum, value) => sum + value, 0);
 const totalBets = (bets) => BACCARAT_BET_KEYS.reduce((sum, key) => sum + totalStack(bets[key]), 0);
-const STARTING_ROAD = [
-  "banker", "banker", "player", "banker", "player", "player", "tie", "banker",
-  "banker", "banker", "player", "player", "banker", "player", "banker", "banker",
-  "player", "player", "player", "banker", "tie", "player", "banker", "player",
-].map((outcome, index) => ({
-  outcome,
-  playerPair: index === 5 || index === 17,
-  bankerPair: index === 8 || index === 19,
-  playerTotal: outcome === "player" ? 8 : outcome === "tie" ? 7 : 5,
-  bankerTotal: outcome === "banker" ? 8 : outcome === "tie" ? 7 : 5,
-}));
-
 function BrandLockup() {
   return (
     <span className="baccarat-brand-lockup">
@@ -276,7 +266,7 @@ function BaccaratRoadGrid({ cells, columns, kind, label }) {
   );
 }
 
-function BaccaratRoadConsole({ rounds }) {
+function BaccaratRoadConsole({ rounds, shoeNumber, expanded, onToggle }) {
   const fitColumns = (cells, columns) => {
     const maxColumn = cells.reduce((max, cell) => Math.max(max, cell.column), 0);
     const firstColumn = Math.max(0, maxColumn - columns + 1);
@@ -290,25 +280,46 @@ function BaccaratRoadConsole({ rounds }) {
   const counts = rounds.reduce((summary, round) => ({ ...summary, [round.outcome]: summary[round.outcome] + 1 }), { player: 0, banker: 0, tie: 0 });
 
   return (
-    <section className="baccarat-road-console" aria-label="Official Baccarat result roads">
-      <article className="baccarat-road-board bead-board">
-        <header><span><Sun size={13} weight="duotone" /> BEAD PLATE</span><b>LAST {Math.min(rounds.length, 72)}</b></header>
-        <BaccaratRoadGrid cells={bead} columns={12} kind="bead" label="Chronological bead plate" />
-      </article>
-      <div className="baccarat-road-spacer" aria-hidden="true"></div>
-      <article className="baccarat-road-board pattern-board">
-        <header>
-          <span><strong>SHOE #61</strong><b className="count-player">P {counts.player}</b><b className="count-banker">B {counts.banker}</b><b className="count-tie">T {counts.tie}</b></span>
-          <small>BIG ROAD · DERIVED ROADS</small>
-        </header>
-        <BaccaratRoadGrid cells={big} columns={16} kind="big" label="Baccarat Big Road" />
-        <div className="baccarat-derived-roads">
-          <BaccaratRoadGrid cells={bigEye} columns={12} kind="derived" label="Big Eye Boy road" />
-          <BaccaratRoadGrid cells={small} columns={12} kind="derived" label="Small Road" />
-          <BaccaratRoadGrid cells={cockroach} columns={12} kind="derived" label="Cockroach Pig road" />
-        </div>
-      </article>
+    <section className={`baccarat-road-console${expanded ? " is-expanded" : " is-collapsed"}`} aria-label="Official Baccarat result roads">
+      <button type="button" className="baccarat-road-toggle" onClick={onToggle} aria-expanded={expanded}>
+        <span><ChartLineUp size={15} weight="duotone" /><strong>ROAD VIEW</strong></span>
+        <small>CURRENT SHOE · RESULTS DO NOT PREDICT THE NEXT HAND</small>
+        <b className="count-player">P {counts.player}</b>
+        <b className="count-banker">B {counts.banker}</b>
+        <b className="count-tie">T {counts.tie}</b>
+        {expanded ? <CaretDown size={16} weight="bold" /> : <CaretUp size={16} weight="bold" />}
+      </button>
+      <div className="baccarat-road-console-content">
+        <article className="baccarat-road-board bead-board">
+          <header><span><Sun size={13} weight="duotone" /> BEAD PLATE</span><b>LAST {Math.min(rounds.length, 72)}</b></header>
+          <BaccaratRoadGrid cells={bead} columns={12} kind="bead" label="Chronological bead plate" />
+        </article>
+        <article className="baccarat-road-board pattern-board">
+          <header>
+            <span><strong>SHOE #{shoeNumber}</strong><b className="count-player">P {counts.player}</b><b className="count-banker">B {counts.banker}</b><b className="count-tie">T {counts.tie}</b></span>
+            <small>BIG ROAD · DERIVED ROADS</small>
+          </header>
+          <BaccaratRoadGrid cells={big} columns={16} kind="big" label="Baccarat Big Road" />
+          <div className="baccarat-derived-roads">
+            <div className="baccarat-derived-panel derived-big-eye"><small>BIG EYE</small><BaccaratRoadGrid cells={bigEye} columns={12} kind="derived" label="Big Eye Boy road" /></div>
+            <div className="baccarat-derived-panel derived-small"><small>SMALL ROAD</small><BaccaratRoadGrid cells={small} columns={12} kind="derived" label="Small Road" /></div>
+            <div className="baccarat-derived-panel derived-cockroach"><small>COCKROACH</small><BaccaratRoadGrid cells={cockroach} columns={12} kind="derived" label="Cockroach Pig road" /></div>
+          </div>
+        </article>
+      </div>
     </section>
+  );
+}
+
+function BaccaratTimerRing({ seconds }) {
+  const progress = Math.max(0, Math.min(1, seconds / 12));
+  return (
+    <div className="baccarat-betting-clock" aria-label={`${seconds} seconds to place bets`}>
+      <div className="baccarat-timer-ring" style={{ "--timer-progress": `${progress * 360}deg` }}>
+        <strong>{seconds}</strong>
+      </div>
+      <span><i aria-hidden="true"></i> BETTING OPEN</span>
+    </div>
   );
 }
 
@@ -328,7 +339,7 @@ function BaccaratRules({ onClose }) {
           <article><strong>Heavenly 9 · 10:1 / 75:1</strong><p>One three-card 9 pays 10:1. Player and Banker both finishing with three-card 9 pays 75:1.</p></article>
           <article><strong>Cinematic pace</strong><p>Choose Cinematic, Live, or Turbo dealing. Cinematic stretches card arrivals and settlement for more suspense.</p></article>
           <article><strong>Card-by-card peel</strong><p>Enable Peel and choose Player or Banker first. Every physical card reveals separately; any required third card is dealt only after the opening four are exposed, then receives its own peel. Unpeeled cards reveal automatically.</p></article>
-          <article><strong>Official road console</strong><p>The Bead Plate records results chronologically. The Big Road groups Player and Banker streaks, while Big Eye Boy, Small Road, and Cockroach Pig describe changes in the Big Road pattern.</p></article>
+          <article><strong>Official road console</strong><p>The Bead Plate records results chronologically. The Big Road groups Player and Banker streaks, while Big Eye Boy, Small Road, and Cockroach Pig describe changes in the Big Road pattern. Roads reset with every new shoe and never predict the next hand.</p></article>
         </div>
       </section>
     </div>
@@ -347,7 +358,9 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   const [roundResult, setRoundResult] = useState(null);
   const [settlement, setSettlement] = useState(null);
   const [message, setMessage] = useState("PLACE YOUR BETS");
-  const [road, setRoad] = useState(STARTING_ROAD);
+  const [road, setRoad] = useState([]);
+  const [shoeNumber, setShoeNumber] = useState(1);
+  const [roadOpen, setRoadOpen] = useState(() => typeof window !== "undefined" && window.innerWidth <= 760);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [paceId, setPaceId] = useState("cinematic");
   const [peelEnabled, setPeelEnabled] = useState(false);
@@ -503,10 +516,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
     setMessage(`REPEATED · ${formatPeso(repeatTotal)}`);
   };
 
-  const drawCard = () => {
-    if (shoeRef.current.length < 60) shoeRef.current = createBaccaratShoe();
-    return shoeRef.current.pop();
-  };
+  const drawCard = () => shoeRef.current.pop();
 
   const settleRound = ({ completedRound, fundedBets, fundedTotals, fundedTotal, startingBalance, roundId, pace }) => {
       const result = settleBaccaratBets(fundedTotals, completedRound);
@@ -515,7 +525,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
       if (returned) onBalanceChange((current) => current + returned);
       setRoundResult(completedRound);
       setSettlement(result);
-      setRoad((current) => [...current, completedRound].slice(-96));
+      setRoad((current) => [...current, completedRound]);
       playSound("result");
       const resultTotal = completedRound.outcome === "tie"
         ? `${completedRound.playerTotal} — ${completedRound.bankerTotal}`
@@ -671,6 +681,11 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
     peelCompleteRef.current = null;
     roundRef.current += 1;
     const roundId = roundRef.current;
+    if (shoeRef.current.length < 60) {
+      shoeRef.current = createBaccaratShoe();
+      setShoeNumber((current) => current + 1);
+      setRoad([]);
+    }
     const opening = dealBaccaratOpening(drawCard);
     const pace = DEAL_PACES[paceRef.current];
     const usePeel = peelEnabledRef.current;
@@ -730,7 +745,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
     : [];
 
   return (
-    <main className={`baccarat-app phase-${phase} pace-${paceId}${peelEnabled ? " is-peel-enabled" : ""}`}>
+    <main className={`baccarat-app phase-${phase} pace-${paceId}${peelEnabled ? " is-peel-enabled" : ""}${roadOpen ? " road-open" : " road-collapsed"}`}>
       <header className="baccarat-topbar">
         <div className="baccarat-topbar-left">
           <button type="button" className="baccarat-icon-button" onClick={onBack} disabled={!bettingOpen} aria-label="Return to Cleopatra Casino lobby"><ArrowLeft size={21} weight="bold" /></button>
@@ -757,18 +772,15 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
       </header>
 
       <section className="baccarat-stage" aria-label="Cleopatra Speed Baccarat table">
-        <img className="baccarat-table-background" src="/assets/carbon-club-table.png" alt="Premium graphite Speed Baccarat table" />
+        <picture className="baccarat-table-plate">
+          <source media="(max-width: 760px)" srcSet="/assets/baccarat-table-3d-mobile-v2.png" />
+          <img className="baccarat-table-background" src="/assets/baccarat-table-3d-v2.png" alt="Premium dimensional graphite Speed Baccarat table" />
+        </picture>
         <div className="baccarat-table-shell" aria-hidden="true"><i></i><span></span><b></b></div>
-        <div className="baccarat-live-badge"><span></span> CLEOPATRA SPEED · TABLE A · 8 DECKS</div>
+        <div className="baccarat-live-badge"><span></span> SPEED BACCARAT</div>
         <div className={`baccarat-status status-${phase}`} role="status" aria-live="polite"><i></i>{message}</div>
 
-        {bettingOpen && (
-          <div className="baccarat-betting-clock" aria-label={`${seconds} seconds to place bets`}>
-            <span><Timer size={15} weight="duotone" /> BETTING OPEN</span>
-            <div><i style={{ width: `${(seconds / 12) * 100}%` }}></i></div>
-            <strong>{seconds}</strong>
-          </div>
-        )}
+        {bettingOpen && <BaccaratTimerRing seconds={seconds} />}
 
         <div className="baccarat-shoe" aria-label={`${shoeRef.current.length} cards remaining in the shoe`}>
           <CardsThree size={30} weight="duotone" /><span><small>8-DECK SHOE</small><strong>{shoeRef.current.length} CARDS</strong></span>
@@ -798,7 +810,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
 
         <div className="baccarat-table-brand" aria-label="Cleopatra Casino Speed Baccarat">
           <img src="/assets/brand/cleon-casino-mark.png" alt="" aria-hidden="true" />
-          <span><strong>CLEOPATRA CASINO</strong><small>SPEED BACCARAT</small></span>
+          <span><strong>CLEOPATRA</strong><small>CASINO</small><em>SPEED BACCARAT</em></span>
         </div>
 
         <div className="baccarat-table-rules" aria-hidden="true"><strong>CLOSEST TO 9 WINS</strong><span>BANKER PAYS 0.95 TO 1 · TIE PAYS 8 TO 1</span></div>
@@ -842,7 +854,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
           </div>
         </div>
 
-        <BaccaratRoadConsole rounds={road} />
+        <BaccaratRoadConsole rounds={road} shoeNumber={shoeNumber} expanded={roadOpen} onToggle={() => setRoadOpen((current) => !current)} />
 
         {roundResult && (
           <div className={`baccarat-result-banner result-${roundResult.outcome}`} role="status" aria-live="assertive">
