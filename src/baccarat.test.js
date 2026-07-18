@@ -6,6 +6,7 @@ import {
   baccaratBigRoad,
   baccaratDerivedRoad,
   baccaratHandTotal,
+  baccaratOpeningPeelOrder,
   baccaratOutcome,
   baccaratSideBetMultipliers,
   bankerDrawsThirdCard,
@@ -15,6 +16,7 @@ import {
   hasBaccaratPair,
   isBaccaratNatural,
   playerDrawsThirdCard,
+  revealBaccaratPeelQueue,
   settleBaccaratBets,
 } from "./baccarat.js";
 
@@ -76,6 +78,18 @@ test("third cards are not drawn until both opening hands have been dealt", () =>
   assert.deepEqual(round.thirdSequence.map((item) => item.side), ["player", "banker"]);
   assert.equal(round.playerTotal, 1);
   assert.equal(round.bankerTotal, 9);
+});
+
+test("opening peel order follows the latest active Player or Banker wager", () => {
+  assert.deepEqual(baccaratOpeningPeelOrder({ player: 100, banker: 0 }, ["player"]), ["player", "player", "banker", "banker"]);
+  assert.deepEqual(baccaratOpeningPeelOrder({ player: 0, banker: 100 }, ["banker"]), ["banker", "banker", "player", "player"]);
+  assert.deepEqual(baccaratOpeningPeelOrder({ player: 100, banker: 100 }, ["player", "banker"]), ["banker", "banker", "player", "player"]);
+  assert.deepEqual(baccaratOpeningPeelOrder({ player: 0, banker: 0, tie: 100 }, ["tie"]), ["player", "player", "banker", "banker"]);
+});
+
+test("quick peel reveals every remaining card in the active peel stage", () => {
+  assert.deepEqual(revealBaccaratPeelQueue({ player: 0, banker: 0 }, ["player", "player", "banker", "banker"]), { player: 2, banker: 2 });
+  assert.deepEqual(revealBaccaratPeelQueue({ player: 2, banker: 2 }, ["player", "banker"]), { player: 3, banker: 3 });
 });
 
 test("official Baccarat roads use bead order, streak columns, ties, and derived markers", () => {

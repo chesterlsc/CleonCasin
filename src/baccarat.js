@@ -4,6 +4,24 @@ export const BACCARAT_MAIN_BET_KEYS = ["player", "tie", "banker"];
 export const BACCARAT_SIDE_BET_KEYS = ["playerPair", "panda8", "heavenly9", "tiger6", "tiger7", "bankerPair"];
 export const BACCARAT_BET_KEYS = [...BACCARAT_MAIN_BET_KEYS, ...BACCARAT_SIDE_BET_KEYS];
 
+export function baccaratOpeningPeelOrder(betTotals = {}, wagerActions = []) {
+  const activeMainSide = [...wagerActions]
+    .reverse()
+    .find((side) => ["player", "banker"].includes(side) && Number(betTotals[side] || 0) > 0);
+  const first = activeMainSide
+    ?? (Number(betTotals.banker || 0) > 0 && Number(betTotals.player || 0) <= 0 ? "banker" : "player");
+  const second = first === "player" ? "banker" : "player";
+  return [first, first, second, second];
+}
+
+export function revealBaccaratPeelQueue(revealedCounts = {}, peelQueue = []) {
+  const nextCounts = { player: Number(revealedCounts.player || 0), banker: Number(revealedCounts.banker || 0) };
+  peelQueue.forEach((side) => {
+    if (side === "player" || side === "banker") nextCounts[side] += 1;
+  });
+  return nextCounts;
+}
+
 export const BACCARAT_PAYOUTS = {
   player: 1,
   banker: 0.95,

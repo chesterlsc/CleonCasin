@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowCounterClockwise,
   ArrowLeft,
-  ArrowsLeftRight,
   CaretDown,
   CaretUp,
   CardsThree,
@@ -11,6 +10,7 @@ import {
   Crown,
   Gauge,
   HandPalm,
+  FastForward,
   Info,
   Lightning,
   Play,
@@ -31,9 +31,11 @@ import {
   baccaratBigRoad,
   baccaratDerivedRoad,
   baccaratHandTotal,
+  baccaratOpeningPeelOrder,
   completeBaccaratRoundFromOpening,
   createBaccaratShoe,
   dealBaccaratOpening,
+  revealBaccaratPeelQueue,
   settleBaccaratBets,
 } from "./baccarat.js";
 import { formatPeso } from "./game.js";
@@ -108,7 +110,7 @@ function BaccaratCard({ card, order = 0, side, concealed = false }) {
   );
 }
 
-function PeelControl({ side, cardNumber, cardTotal, onPeel }) {
+function PeelControl({ side, cardNumber, cardTotal, onPeel, onPeelAll }) {
   const [holding, setHolding] = useState(false);
   const holdRef = useRef(null);
 
@@ -130,26 +132,32 @@ function PeelControl({ side, cardNumber, cardTotal, onPeel }) {
   useEffect(() => () => window.clearTimeout(holdRef.current), []);
 
   return (
-    <button
-      type="button"
-      className={`baccarat-peel-control${holding ? " is-holding" : ""}`}
-      onPointerDown={start}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onClick={(event) => { if (event.detail === 0) onPeel(); }}
-      onContextMenu={(event) => event.preventDefault()}
-      onDragStart={(event) => event.preventDefault()}
-      aria-label={`Hold to peel ${side} card ${cardNumber}`}
-    >
-      <HandPalm size={17} weight="duotone" />
-      <span><strong>HOLD TO PEEL</strong><small>{side.toUpperCase()} · CARD {cardNumber} OF {cardTotal}</small></span>
-      <i aria-hidden="true"></i>
-    </button>
+    <div className="baccarat-peel-actions">
+      <button
+        type="button"
+        className={`baccarat-peel-control${holding ? " is-holding" : ""}`}
+        onPointerDown={start}
+        onPointerUp={cancel}
+        onPointerLeave={cancel}
+        onPointerCancel={cancel}
+        onClick={(event) => { if (event.detail === 0) onPeel(); }}
+        onContextMenu={(event) => event.preventDefault()}
+        onDragStart={(event) => event.preventDefault()}
+        aria-label={`Hold to peel ${side} card ${cardNumber}`}
+      >
+        <HandPalm size={17} weight="duotone" />
+        <span><strong>HOLD TO PEEL</strong><small>{side.toUpperCase()} · CARD {cardNumber} OF {cardTotal}</small></span>
+        <i aria-hidden="true"></i>
+      </button>
+      <button type="button" className="baccarat-quick-peel" onClick={onPeelAll} aria-label="Quick peel all remaining cards">
+        <FastForward size={17} weight="fill" />
+        <span><strong>QUICK PEEL</strong><small>REVEAL ALL</small></span>
+      </button>
+    </div>
   );
 }
 
-function BaccaratHand({ side, cards, active, revealedCount = 3, canPeel = false, activePeel = false, onPeel }) {
+function BaccaratHand({ side, cards, active, revealedCount = 3, canPeel = false, activePeel = false, onPeel, onPeelAll }) {
   const fullyRevealed = cards.length > 0 && revealedCount >= cards.length;
   const total = fullyRevealed ? baccaratHandTotal(cards) : null;
   return (
@@ -161,7 +169,7 @@ function BaccaratHand({ side, cards, active, revealedCount = 3, canPeel = false,
       <div className={`baccarat-card-row cards-${cards.length}`}>
         {cards.map((card, index) => <BaccaratCard key={`${card.rank}-${card.suit}-${index}`} card={card} order={index} side={side} concealed={index >= revealedCount} />)}
       </div>
-      {canPeel && activePeel && revealedCount < cards.length && <PeelControl side={side} cardNumber={revealedCount + 1} cardTotal={cards.length} onPeel={onPeel} />}
+      {canPeel && activePeel && revealedCount < cards.length && <PeelControl side={side} cardNumber={revealedCount + 1} cardTotal={cards.length} onPeel={onPeel} onPeelAll={onPeelAll} />}
     </section>
   );
 }
@@ -334,7 +342,7 @@ function BaccaratRules({ onClose }) {
           <article><strong>Tiger 7 · 40:1</strong><p>Wins when the Banker beats the Player with a three-card total of 7.</p></article>
           <article><strong>Heavenly 9 · 10:1 / 75:1</strong><p>One three-card 9 pays 10:1. Player and Banker both finishing with three-card 9 pays 75:1.</p></article>
           <article><strong>Cinematic pace</strong><p>Choose Cinematic, Live, or Turbo dealing. Cinematic stretches card arrivals and settlement for more suspense.</p></article>
-          <article><strong>Card-by-card peel</strong><p>Enable Peel and choose Player or Banker first. Every physical card reveals separately; any required third card is dealt only after the opening four are exposed, then receives its own peel. Unpeeled cards reveal automatically.</p></article>
+          <article><strong>Card-by-card peel</strong><p>Enable Peel and place a Player or Banker wager. The latest active main wager peels first automatically; with only Tie or side bets, Player opens first. Every physical card reveals separately, and any required third card waits until all four opening cards are exposed. Quick Peel reveals every card remaining in the current peel stage.</p></article>
           <article><strong>Official road console</strong><p>The Bead Plate records results chronologically. The Big Road groups Player and Banker streaks, while Big Eye Boy, Small Road, and Cockroach Pig describe changes in the Big Road pattern. Roads reset with every new shoe and never predict the next hand.</p></article>
         </div>
       </section>
@@ -356,11 +364,10 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   const [message, setMessage] = useState("PLACE YOUR BETS");
   const [road, setRoad] = useState([]);
   const [shoeNumber, setShoeNumber] = useState(1);
-  const [roadOpen, setRoadOpen] = useState(() => typeof window !== "undefined" && window.innerWidth <= 760);
+  const [roadOpen, setRoadOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [paceId, setPaceId] = useState("cinematic");
   const [peelEnabled, setPeelEnabled] = useState(false);
-  const [peelFirst, setPeelFirst] = useState("player");
   const [revealedCounts, setRevealedCounts] = useState({ player: 3, banker: 3 });
   const [nextPeelSide, setNextPeelSide] = useState(null);
   const shoeRef = useRef(createBaccaratShoe());
@@ -371,7 +378,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   const balanceRef = useRef(balance);
   const paceRef = useRef("cinematic");
   const peelEnabledRef = useRef(false);
-  const peelFirstRef = useRef("player");
+  const actionsRef = useRef(actions);
   const revealedCountsRef = useRef(revealedCounts);
   const peelQueueRef = useRef([]);
   const peelCompleteRef = useRef(null);
@@ -389,7 +396,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => { paceRef.current = paceId; }, [paceId]);
   useEffect(() => { peelEnabledRef.current = peelEnabled; }, [peelEnabled]);
-  useEffect(() => { peelFirstRef.current = peelFirst; }, [peelFirst]);
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
   useEffect(() => { revealedCountsRef.current = revealedCounts; }, [revealedCounts]);
 
   const clearTimers = () => {
@@ -444,16 +451,6 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
       const next = !current;
       peelEnabledRef.current = next;
       setMessage(next ? "CARD PEEL ARMED" : "CARD PEEL OFF");
-      return next;
-    });
-  };
-
-  const cyclePeelFirst = () => {
-    if (!bettingOpen) return;
-    setPeelFirst((current) => {
-      const next = current === "player" ? "banker" : "player";
-      peelFirstRef.current = next;
-      setMessage(`${next.toUpperCase()} CARDS WILL PEEL FIRST`);
       return next;
     });
   };
@@ -618,6 +615,24 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
     timersRef.current.push(timer);
   };
 
+  const quickPeelAll = () => {
+    if (phaseRef.current !== "peeling" || !peelQueueRef.current.length) return;
+    window.clearTimeout(peelAutoTimerRef.current);
+    const nextCounts = revealBaccaratPeelQueue(revealedCountsRef.current, peelQueueRef.current);
+    revealedCountsRef.current = nextCounts;
+    setRevealedCounts(nextCounts);
+    playSound("peel");
+    peelQueueRef.current = [];
+    const onComplete = peelCompleteRef.current;
+    peelCompleteRef.current = null;
+    setNextPeelSide(null);
+    phaseRef.current = "tableau";
+    setPhase("tableau");
+    setMessage("QUICK PEEL COMPLETE · CHECKING TABLEAU");
+    const timer = window.setTimeout(() => onComplete?.(), Math.min(320, DEAL_PACES[paceRef.current].settle));
+    timersRef.current.push(timer);
+  };
+
   peelNextRef.current = revealNextCard;
 
   const stageCards = (sequence, pace, onComplete, startingCardNumber = 0) => {
@@ -705,9 +720,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
         continueTableau(roundContext);
         return;
       }
-      const first = peelFirstRef.current;
-      const second = first === "player" ? "banker" : "player";
-      beginPeel([first, first, second, second], () => continueTableau(roundContext), "OPENING CARDS");
+      beginPeel(baccaratOpeningPeelOrder(fundedTotals, actionsRef.current), () => continueTableau(roundContext), "OPENING CARDS");
     });
   };
 
@@ -756,9 +769,6 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
           <button type="button" className={`baccarat-experience-button is-peel${peelEnabled ? " is-active" : ""}`} onClick={togglePeel} disabled={!bettingOpen} aria-pressed={peelEnabled}>
             <HandPalm size={18} weight="duotone" /><span><small>CARD REVEAL</small><strong>PEEL {peelEnabled ? "ON" : "OFF"}</strong></span>
           </button>
-          <button type="button" className="baccarat-experience-button is-order" onClick={cyclePeelFirst} disabled={!bettingOpen || !peelEnabled} aria-label={`Peel ${peelFirst} cards first. Activate to change.`}>
-            <ArrowsLeftRight size={18} weight="duotone" /><span><small>PEEL FIRST</small><strong>{peelFirst.toUpperCase()}</strong></span>
-          </button>
         </div>
         <div className="baccarat-topbar-actions">
           <button type="button" className="baccarat-history-button" onClick={onHistory}><ClockCounterClockwise size={18} /> HISTORY</button>
@@ -794,6 +804,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
             canPeel={phase === "peeling"}
             activePeel={nextPeelSide === "player"}
             onPeel={() => revealNextCard("player")}
+            onPeelAll={quickPeelAll}
           />
           <div className="baccarat-versus" aria-hidden="true"><span>VS</span></div>
           <BaccaratHand
@@ -804,6 +815,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
             canPeel={phase === "peeling"}
             activePeel={nextPeelSide === "banker"}
             onPeel={() => revealNextCard("banker")}
+            onPeelAll={quickPeelAll}
           />
         </div>
 
@@ -814,7 +826,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
 
         <div className="baccarat-table-rules" aria-hidden="true"><strong>CLOSEST TO 9 WINS</strong><span>BANKER PAYS 0.95 TO 1 · TIE PAYS 8 TO 1</span></div>
 
-        <div className="baccarat-bet-layout" aria-label="Speed Baccarat betting spots">
+        <div className="baccarat-bet-layout" aria-label="Speed Baccarat betting spots" aria-hidden={roadOpen || undefined} inert={roadOpen || undefined}>
           <div className="baccarat-main-bet-row">
             {BACCARAT_MAIN_BET_KEYS.map((key) => (
               <BaccaratBetSpot
