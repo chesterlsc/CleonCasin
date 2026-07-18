@@ -104,10 +104,14 @@ function BaccaratCard({ card, order = 0, side, concealed = false }) {
       aria-label={concealed ? `Face-down ${side} card` : `${card.rank} of ${card.suit}`}
     >
       <span className="baccarat-card-inner">
-        <span className="baccarat-card-face baccarat-card-front">
-          <strong>{card.rank}</strong>
-          <b aria-hidden="true">{SUIT_MARKS[card.suit]}</b>
-          <i aria-hidden="true">{SUIT_MARKS[card.suit]}</i>
+        <span className="baccarat-card-face baccarat-card-front" aria-hidden={concealed ? "true" : undefined}>
+          {!concealed && (
+            <>
+              <strong>{card.rank}</strong>
+              <b aria-hidden="true">{SUIT_MARKS[card.suit]}</b>
+              <i aria-hidden="true">{SUIT_MARKS[card.suit]}</i>
+            </>
+          )}
         </span>
         <span className="baccarat-card-face baccarat-card-back" aria-hidden="true">
           <img src="/assets/brand/cleon-casino-mark.png" alt="" />
@@ -147,6 +151,8 @@ function PeelControl({ side, cardNumber, cardTotal, onPeel }) {
       onPointerLeave={cancel}
       onPointerCancel={cancel}
       onClick={(event) => { if (event.detail === 0) onPeel(); }}
+      onContextMenu={(event) => event.preventDefault()}
+      onDragStart={(event) => event.preventDefault()}
       aria-label={`Hold to peel ${side} card ${cardNumber}`}
     >
       <HandPalm size={17} weight="duotone" />
@@ -343,7 +349,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   const [message, setMessage] = useState("PLACE YOUR BETS");
   const [road, setRoad] = useState(STARTING_ROAD);
   const [rulesOpen, setRulesOpen] = useState(false);
-  const [paceId, setPaceId] = useState("live");
+  const [paceId, setPaceId] = useState("cinematic");
   const [peelEnabled, setPeelEnabled] = useState(false);
   const [peelFirst, setPeelFirst] = useState("player");
   const [revealedCounts, setRevealedCounts] = useState({ player: 3, banker: 3 });
@@ -354,7 +360,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   const phaseRef = useRef("betting");
   const betsRef = useRef(bets);
   const balanceRef = useRef(balance);
-  const paceRef = useRef("live");
+  const paceRef = useRef("cinematic");
   const peelEnabledRef = useRef(false);
   const peelFirstRef = useRef("player");
   const revealedCountsRef = useRef(revealedCounts);

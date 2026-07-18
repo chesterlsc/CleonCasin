@@ -76,3 +76,6 @@ When implementing from a selected generated mock, treat that image as the source
 - Let the player choose whether the Player or Banker hand peels first before the round. Preserve the standard alternating initial deal order while using the chosen hand to control the reveal sequence.
 - The Baccarat table must show the five standard result roads in CLEOPATRA colors: chronological Bead Plate, Big Road with tie and pair marks, Big Eye Boy, Small Road, and Cockroach Pig. Show Player, Banker, and Tie counts beside the road console and keep both road panels visible without covering the central betting controls.
 - Every Baccarat treasure side-bet spot needs a real icon-library mark plus a compact numeric or hand badge. Pair, Panda 8, Heavenly 9, Tiger 6, and Tiger 7 must remain visually distinguishable without relying on label text alone.
+- Speed Baccarat defaults to Cinematic pacing on every fresh table entry.
+- On touch devices, holding the peel control must never select, copy, drag, or expose interface text. Concealed cards must not mount or reveal their rank or suit content until that individual card is peeled.
+- On mobile, isolate the CLEOPATRA felt wordmark from the 3D card layer and preserve a visible gap below every possible three-card hand and peel control so the branding never overlaps or glitches during dealing, peeling, or settlement.
