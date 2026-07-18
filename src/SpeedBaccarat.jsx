@@ -9,16 +9,13 @@ import {
   ChartLineUp,
   ClockCounterClockwise,
   Crown,
-  DiamondsFour,
   Gauge,
   HandPalm,
   Info,
   Lightning,
-  PawPrint,
   Play,
   PokerChip,
   Repeat,
-  Sparkle,
   SpeakerHigh,
   SpeakerSlash,
   Sun,
@@ -57,12 +54,12 @@ const BET_META = {
   player: { label: "PLAYER", odds: "1:1", tone: "player", max: 250000, group: "main" },
   tie: { label: "TIE", odds: "8:1", tone: "tie", max: 250000, group: "main" },
   banker: { label: "BANKER", odds: "0.95:1", tone: "banker", max: 250000, group: "main" },
-  playerPair: { label: "PLAYER PAIR", odds: "11:1", tone: "player-pair", max: 10000, group: "side", icon: DiamondsFour, badge: "P" },
-  panda8: { label: "PANDA 8", odds: "25:1", tone: "panda", max: 10000, group: "side", icon: PawPrint, badge: "8" },
-  heavenly9: { label: "HEAVENLY 9", odds: "10:1 · 75:1", tone: "heavenly", max: 10000, group: "side", icon: Sparkle, badge: "9" },
-  tiger6: { label: "TIGER 6", odds: "12:1 · 20:1", tone: "tiger-six", max: 10000, group: "side", icon: Lightning, badge: "6" },
-  tiger7: { label: "TIGER 7", odds: "40:1", tone: "tiger-seven", max: 10000, group: "side", icon: PawPrint, badge: "7" },
-  bankerPair: { label: "BANKER PAIR", odds: "11:1", tone: "banker-pair", max: 10000, group: "side", icon: DiamondsFour, badge: "B" },
+  playerPair: { label: "PLAYER PAIR", odds: "11:1", tone: "player-pair", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/player-pair-v1.png", badge: "P" },
+  panda8: { label: "PANDA 8", odds: "25:1", tone: "panda", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/panda-8-v1.png", badge: "8" },
+  heavenly9: { label: "HEAVENLY 9", odds: "10:1 · 75:1", tone: "heavenly", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/heavenly-9-v1.png", badge: "9" },
+  tiger6: { label: "TIGER 6", odds: "12:1 · 20:1", tone: "tiger-six", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/tiger-6-v1.png", badge: "6" },
+  tiger7: { label: "TIGER 7", odds: "40:1", tone: "tiger-seven", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/tiger-7-v1.png", badge: "7" },
+  bankerPair: { label: "BANKER PAIR", odds: "11:1", tone: "banker-pair", max: 10000, group: "side", asset: "/assets/baccarat-sidebets/banker-pair-v1.png", badge: "B" },
 };
 
 const DEAL_PACES = {
@@ -170,11 +167,10 @@ function BaccaratHand({ side, cards, active, revealedCount = 3, canPeel = false,
 }
 
 function SideBetMark({ meta }) {
-  const Icon = meta.icon;
-  if (!Icon) return null;
+  if (!meta.asset) return null;
   return (
     <span className="baccarat-side-bet-mark" aria-hidden="true">
-      <Icon size={18} weight="duotone" />
+      <img src={meta.asset} alt="" />
       <b>{meta.badge}</b>
     </span>
   );
@@ -346,7 +342,7 @@ function BaccaratRules({ onClose }) {
   );
 }
 
-export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onRoundSettled, soundOn, onToggleSound }) {
+export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onRoundSettled, soundOn, onToggleSound, cashierOpen = false, onCashier }) {
   const [phase, setPhase] = useState("betting");
   const [seconds, setSeconds] = useState(12);
   const [selectedChip, setSelectedChip] = useState(250);
@@ -718,7 +714,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
   startRoundRef.current = startRound;
 
   useEffect(() => {
-    if (phase !== "betting") return undefined;
+    if (phase !== "betting" || cashierOpen) return undefined;
     const timer = window.setInterval(() => {
       setSeconds((current) => {
         if (current > 1) return current - 1;
@@ -728,7 +724,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [phase]);
+  }, [phase, cashierOpen]);
 
   const playerActive = (phase === "dealing" && playerCards.length <= bankerCards.length) || (phase === "peeling" && nextPeelSide === "player");
   const bankerActive = (phase === "dealing" && bankerCards.length < playerCards.length) || (phase === "peeling" && nextPeelSide === "banker");
@@ -766,6 +762,9 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
         </div>
         <div className="baccarat-topbar-actions">
           <button type="button" className="baccarat-history-button" onClick={onHistory}><ClockCounterClockwise size={18} /> HISTORY</button>
+          <button type="button" className="baccarat-cashier-button" onClick={() => onCashier?.(totalBet)} disabled={!bettingOpen || cashierOpen} aria-label="Open Cleopatra Cashier">
+            <PokerChip size={19} weight="duotone" /><span>CASHIER</span>
+          </button>
           <button type="button" className="baccarat-icon-button" onClick={onToggleSound} aria-label={soundOn ? "Mute sound" : "Enable sound"}>{soundOn ? <SpeakerHigh size={22} /> : <SpeakerSlash size={22} />}</button>
           <button type="button" className="baccarat-icon-button" onClick={() => setRulesOpen(true)} aria-label="Speed Baccarat rules"><Info size={22} /></button>
         </div>
@@ -834,7 +833,7 @@ export function SpeedBaccarat({ balance, onBalanceChange, onBack, onHistory, onR
             ))}
           </div>
           <div className="baccarat-side-bet-console">
-            <span className="baccarat-side-bet-label"><Crown size={12} weight="fill" /> TREASURE SIDE BETS</span>
+            <span className="baccarat-side-bet-label"><Crown size={12} weight="fill" /><b>ROYAL TREASURES</b><small>SIX LIVE MARKETS</small></span>
             <div className="baccarat-side-bet-row">
               {BACCARAT_SIDE_BET_KEYS.map((key) => (
                 <BaccaratBetSpot

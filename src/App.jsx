@@ -771,6 +771,152 @@ function Modal({ title, children, onClose, className = "" }) {
   );
 }
 
+function CashierModal({
+  mode,
+  onMode,
+  step,
+  onStep,
+  processing,
+  amount,
+  onAmount,
+  method,
+  onMethod,
+  account,
+  onAccount,
+  reference,
+  provider,
+  balance,
+  available,
+  onSubmit,
+  onCopyLink,
+  onClose,
+}) {
+  const isWithdrawal = mode === "withdraw";
+  const maximum = isWithdrawal ? Math.min(CASHIER_MAX, available) : CASHIER_MAX;
+
+  return (
+    <Modal title="CLEOPATRA Cashier" onClose={onClose} className="deposit-modal cashier-modal">
+      <form className={step === "review" && mode === "deposit" ? "is-deposit-request" : ""} onSubmit={onSubmit}>
+        <div className="cashier-mode-tabs" role="tablist" aria-label="Cashier transaction">
+          <button
+            type="button"
+            className={mode === "deposit" ? "is-active" : ""}
+            onClick={() => onMode("deposit")}
+            role="tab"
+            aria-selected={mode === "deposit"}
+          >
+            <ArrowDown size={17} weight="bold" /> DEPOSIT
+          </button>
+          <button
+            type="button"
+            className={mode === "withdraw" ? "is-active" : ""}
+            onClick={() => onMode("withdraw")}
+            role="tab"
+            aria-selected={mode === "withdraw"}
+          >
+            <ArrowUp size={17} weight="bold" /> WITHDRAW
+          </button>
+        </div>
+
+        {step === "details" ? (
+          <>
+            <p className="modal-intro">
+              {isWithdrawal
+                ? "Choose where to send funds from your CLEOPATRA PHP balance."
+                : "Choose a Philippine channel and generate your payment request."}
+            </p>
+            <div className="cashier-trust-row">
+              <PokerChip size={17} weight="duotone" />
+              <span>{isWithdrawal ? "WITHDRAWABLE BALANCE" : "PHP BALANCE"}</span>
+              <b>{formatPeso(isWithdrawal ? available : balance)}</b>
+              <small>AVAILABLE</small>
+            </div>
+            <div className="method-grid" role="radiogroup" aria-label={`${isWithdrawal ? "Withdrawal" : "Deposit"} method`}>
+              {PAYMENT_METHODS.map(({ id, label, helper, tone, ...paymentProvider }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`${method === id ? "is-selected" : ""} provider-${tone}`}
+                  onClick={() => onMethod(id)}
+                  role="radio"
+                  aria-checked={method === id}
+                >
+                  <span className="provider-icon"><PaymentBrand provider={{ id, label, helper, tone, ...paymentProvider }} /></span>
+                  <span className="provider-copy"><strong>{label}</strong><small>{helper}</small></span>
+                  {method === id && <CheckCircle size={18} weight="fill" aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+
+            {isWithdrawal && (
+              <label className="account-field">
+                <span>Receiving {method === "bank" ? "bank account or mobile number" : `${provider.label} mobile number`}</span>
+                <div><PaymentBrand provider={provider} compact /><input type="text" inputMode="tel" autoComplete="tel" placeholder="09XX XXX XXXX" value={account} onChange={(event) => onAccount(event.target.value)} /></div>
+              </label>
+            )}
+
+            <label className="amount-field">
+              <span>{isWithdrawal ? "Withdrawal" : "Deposit"} amount · max {formatPeso(maximum)}</span>
+              <div><b>₱</b><input type="number" min="100" max={maximum} step="100" value={amount} onChange={(event) => onAmount(event.target.value)} /></div>
+            </label>
+            <div className="quick-amounts" aria-label={`Quick ${mode} amounts`}>
+              {(isWithdrawal ? [500, 1000, 5000, 10000] : [1000, 10000, 50000, 250000]).map((quickAmount) => (
+                <button key={quickAmount} type="button" disabled={isWithdrawal && quickAmount > available} className={Number(amount) === quickAmount ? "is-selected" : ""} onClick={() => onAmount(quickAmount)}>{isWithdrawal ? "−" : "+"}{formatPeso(quickAmount).replace(".00", "")}</button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="cashier-review">
+            <span className={`review-provider provider-${provider.tone}`}><PaymentBrand provider={provider} compact /><b>{provider.label}</b></span>
+            {mode === "deposit" ? (
+              <>
+                <h3>Scan to deposit</h3>
+                <p className="payment-request-copy">Scan with {provider.label}, or copy the payment link and finish in your wallet app.</p>
+                <PaymentQr provider={provider} reference={reference} />
+                <button type="button" className="payment-link-card" onClick={onCopyLink}>
+                  <LinkSimple size={19} weight="bold" aria-hidden="true" />
+                  <span><small>PAYMENT LINK</small><strong>{reference}</strong></span>
+                  <Copy size={17} weight="bold" aria-hidden="true" />
+                </button>
+                <div className="deposit-request-total"><span>AMOUNT TO PAY</span><strong>{formatPeso(Number(amount) || 0)}</strong></div>
+              </>
+            ) : (
+              <>
+                <h3>Confirm your withdrawal</h3>
+                <dl>
+                  <div><dt>Debit from</dt><dd>CLEOPATRA PHP BALANCE</dd></div>
+                  <div><dt>Send to</dt><dd>{account}</dd></div>
+                  <div><dt>Withdrawal</dt><dd>{formatPeso(Number(amount) || 0)}</dd></div>
+                  <div><dt>Processing fee</dt><dd>₱0.00</dd></div>
+                  <div className="review-total"><dt>Total</dt><dd>{formatPeso(Number(amount) || 0)}</dd></div>
+                </dl>
+              </>
+            )}
+            <button type="button" className="cashier-back" onClick={() => onStep("details")} disabled={processing}>EDIT DETAILS</button>
+          </div>
+        )}
+
+        <button type="submit" className={`cashier-submit is-${mode}`} disabled={processing}>
+          {processing
+            ? <SpinnerGap className="spinner" size={22} aria-hidden="true" />
+            : isWithdrawal
+              ? <ArrowUp size={22} weight="bold" aria-hidden="true" />
+              : step === "review"
+                ? <QrCode size={22} weight="bold" aria-hidden="true" />
+                : <ArrowDown size={22} weight="bold" aria-hidden="true" />}
+          {processing
+            ? `PROCESSING ${mode.toUpperCase()}`
+            : step === "details"
+              ? "CONTINUE"
+              : isWithdrawal
+                ? `CONFIRM ${formatPeso(Number(amount) || 0)}`
+                : `I'VE PAID · CREDIT ${formatPeso(Number(amount) || 0)}`}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+
 function TableSettingsModal({ deckCount, showCardCount, statsMinimized, dealSpeed, onDeckCount, onCardCount, onStatsMinimized, onDealSpeed, onClose }) {
   return (
     <Modal title="Table settings" onClose={onClose} className="settings-modal">
@@ -834,6 +980,7 @@ export function App() {
   const [cashierReference, setCashierReference] = useState("");
   const [cashierStep, setCashierStep] = useState("details");
   const [cashierProcessing, setCashierProcessing] = useState(false);
+  const [cashierReserved, setCashierReserved] = useState(0);
   const [toast, setToast] = useState("");
   const [game, setGame] = useState(INITIAL_GAME);
   const [shoeCount, setShoeCount] = useState(312);
@@ -875,9 +1022,11 @@ export function App() {
   const speedConfig = DEAL_SPEEDS[dealSpeed];
   const decisionLimit = tableVariant === "solo" ? 12 : 10;
   const depositProvider = PAYMENT_METHODS.find((method) => method.id === depositMethod) ?? PAYMENT_METHODS[0];
-  const cashierAvailable = ROUND_LOCKED_PHASES.includes(game.phase)
-    ? walletBalance
-    : Math.max(0, walletBalance - totalSelectedBet);
+  const cashierAvailable = view === "baccarat"
+    ? Math.max(0, walletBalance - cashierReserved)
+    : ROUND_LOCKED_PHASES.includes(game.phase)
+      ? walletBalance
+      : Math.max(0, walletBalance - totalSelectedBet);
   const trueCount = shoeCount > 0 ? runningCount / Math.max(1, shoeCount / 52) : 0;
 
   useEffect(() => {
@@ -2059,6 +2208,7 @@ export function App() {
       setCashierOpen(false);
       setCashierStep("details");
       setCashierReference("");
+      setCashierReserved(0);
       playTone(680, 0.13);
       const reference = isWithdrawal
         ? `CLW-${Date.now().toString(36).slice(-7).toUpperCase()}`
@@ -2152,6 +2302,37 @@ export function App() {
     playTone(dealSpeed === "normal" ? 720 : dealSpeed === "turbo" ? 260 : 480, 0.06);
   };
 
+  const closeCashier = () => {
+    if (cashierProcessing) return;
+    setCashierOpen(false);
+    setCashierStep("details");
+    setCashierReference("");
+    setCashierReserved(0);
+  };
+
+  const cashierOverlay = cashierOpen ? (
+    <CashierModal
+      mode={cashierMode}
+      onMode={(nextMode) => { setCashierMode(nextMode); setCashierStep("details"); setCashierReference(""); }}
+      step={cashierStep}
+      onStep={setCashierStep}
+      processing={cashierProcessing}
+      amount={depositAmount}
+      onAmount={setDepositAmount}
+      method={depositMethod}
+      onMethod={(nextMethod) => { setDepositMethod(nextMethod); setDepositAccount(""); }}
+      account={depositAccount}
+      onAccount={setDepositAccount}
+      reference={cashierReference}
+      provider={depositProvider}
+      balance={walletBalance}
+      available={cashierAvailable}
+      onSubmit={submitCashier}
+      onCopyLink={copyDepositLink}
+      onClose={closeCashier}
+    />
+  ) : null;
+
   if (view === "lobby") {
     return (
       <>
@@ -2172,8 +2353,12 @@ export function App() {
           onRoundSettled={saveRoundHistory}
           soundOn={soundOn}
           onToggleSound={() => setSoundOn((current) => !current)}
+          cashierOpen={cashierOpen}
+          onCashier={(reservedAmount) => { setCashierReserved(reservedAmount); setCashierOpen(true); }}
         />
+        {cashierOverlay}
         {historyOpen && <HistoryModal history={betHistory} stats={casinoStats} onClose={() => setHistoryOpen(false)} />}
+        {toast && <div className="toast" role="status"><CheckCircle size={19} weight="fill" aria-hidden="true" />{toast}</div>}
       </>
     );
   }
@@ -2575,118 +2760,7 @@ export function App() {
         </div>
       </section>
 
-      {cashierOpen && (
-        <Modal title="CLEOPATRA Cashier" onClose={() => { if (!cashierProcessing) { setCashierOpen(false); setCashierStep("details"); setCashierReference(""); } }} className="deposit-modal cashier-modal">
-          <form className={cashierStep === "review" && cashierMode === "deposit" ? "is-deposit-request" : ""} onSubmit={submitCashier}>
-            <div className="cashier-mode-tabs" role="tablist" aria-label="Cashier transaction">
-              <button
-                type="button"
-                className={cashierMode === "deposit" ? "is-active" : ""}
-                onClick={() => { setCashierMode("deposit"); setCashierStep("details"); setCashierReference(""); }}
-                role="tab"
-                aria-selected={cashierMode === "deposit"}
-              >
-                <ArrowDown size={17} weight="bold" /> DEPOSIT
-              </button>
-              <button
-                type="button"
-                className={cashierMode === "withdraw" ? "is-active" : ""}
-                onClick={() => { setCashierMode("withdraw"); setCashierStep("details"); setCashierReference(""); }}
-                role="tab"
-                aria-selected={cashierMode === "withdraw"}
-              >
-                <ArrowUp size={17} weight="bold" /> WITHDRAW
-              </button>
-            </div>
-            {cashierStep === "details" ? (
-              <>
-                <p className="modal-intro">
-                  {cashierMode === "deposit"
-                    ? "Choose a Philippine channel and generate your payment request."
-                    : "Choose where to send funds from your CLEOPATRA PHP balance."}
-                </p>
-                <div className="cashier-trust-row">
-                  <PokerChip size={17} weight="duotone" />
-                  <span>{cashierMode === "withdraw" ? "WITHDRAWABLE BALANCE" : "PHP BALANCE"}</span>
-                  <b>{formatPeso(cashierMode === "withdraw" ? cashierAvailable : walletBalance)}</b>
-                  <small>AVAILABLE</small>
-                </div>
-                <div className="method-grid" role="radiogroup" aria-label={`${cashierMode === "deposit" ? "Deposit" : "Withdrawal"} method`}>
-                  {PAYMENT_METHODS.map(({ id, label, helper, tone, ...provider }) => (
-                    <button key={id} type="button" className={`${depositMethod === id ? "is-selected" : ""} provider-${tone}`} onClick={() => { setDepositMethod(id); setDepositAccount(""); }} role="radio" aria-checked={depositMethod === id}>
-                      <span className="provider-icon"><PaymentBrand provider={{ id, label, helper, tone, ...provider }} /></span>
-                      <span className="provider-copy"><strong>{label}</strong><small>{helper}</small></span>
-                      {depositMethod === id && <CheckCircle size={18} weight="fill" aria-hidden="true" />}
-                    </button>
-                  ))}
-                </div>
-
-                {cashierMode === "withdraw" && (
-                  <label className="account-field">
-                    <span>Receiving {depositMethod === "bank" ? "bank account or mobile number" : `${depositProvider.label} mobile number`}</span>
-                    <div><PaymentBrand provider={depositProvider} compact /><input type="text" inputMode="tel" autoComplete="tel" placeholder="09XX XXX XXXX" value={depositAccount} onChange={(event) => setDepositAccount(event.target.value)} /></div>
-                  </label>
-                )}
-
-                <label className="amount-field">
-                  <span>{cashierMode === "withdraw" ? "Withdrawal" : "Deposit"} amount · max {formatPeso(cashierMode === "withdraw" ? Math.min(CASHIER_MAX, cashierAvailable) : CASHIER_MAX)}</span>
-                  <div><b>₱</b><input type="number" min="100" max={cashierMode === "withdraw" ? Math.min(CASHIER_MAX, cashierAvailable) : CASHIER_MAX} step="100" value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} /></div>
-                </label>
-                <div className="quick-amounts" aria-label={`Quick ${cashierMode} amounts`}>
-                  {(cashierMode === "withdraw" ? [500, 1000, 5000, 10000] : [1000, 10000, 50000, 250000]).map((amount) => (
-                    <button key={amount} type="button" disabled={cashierMode === "withdraw" && amount > cashierAvailable} className={Number(depositAmount) === amount ? "is-selected" : ""} onClick={() => setDepositAmount(amount)}>{cashierMode === "withdraw" ? "−" : "+"}{formatPeso(amount).replace(".00", "")}</button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="cashier-review">
-                <span className={`review-provider provider-${depositProvider.tone}`}><PaymentBrand provider={depositProvider} compact /><b>{depositProvider.label}</b></span>
-                {cashierMode === "deposit" ? (
-                  <>
-                    <h3>Scan to deposit</h3>
-                    <p className="payment-request-copy">Scan with {depositProvider.label}, or copy the payment link and finish in your wallet app.</p>
-                    <PaymentQr provider={depositProvider} reference={cashierReference} />
-                    <button type="button" className="payment-link-card" onClick={copyDepositLink}>
-                      <LinkSimple size={19} weight="bold" aria-hidden="true" />
-                      <span><small>PAYMENT LINK</small><strong>{cashierReference}</strong></span>
-                      <Copy size={17} weight="bold" aria-hidden="true" />
-                    </button>
-                    <div className="deposit-request-total"><span>AMOUNT TO PAY</span><strong>{formatPeso(Number(depositAmount) || 0)}</strong></div>
-                  </>
-                ) : (
-                  <>
-                    <h3>Confirm your withdrawal</h3>
-                    <dl>
-                      <div><dt>Debit from</dt><dd>CLEOPATRA PHP BALANCE</dd></div>
-                      <div><dt>Send to</dt><dd>{depositAccount}</dd></div>
-                      <div><dt>Withdrawal</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div>
-                      <div><dt>Processing fee</dt><dd>₱0.00</dd></div>
-                      <div className="review-total"><dt>Total</dt><dd>{formatPeso(Number(depositAmount) || 0)}</dd></div>
-                    </dl>
-                  </>
-                )}
-                <button type="button" className="cashier-back" onClick={() => setCashierStep("details")} disabled={cashierProcessing}>EDIT DETAILS</button>
-              </div>
-            )}
-            <button type="submit" className={`cashier-submit is-${cashierMode}`} disabled={cashierProcessing}>
-              {cashierProcessing
-                ? <SpinnerGap className="spinner" size={22} aria-hidden="true" />
-                : cashierMode === "withdraw"
-                  ? <ArrowUp size={22} weight="bold" aria-hidden="true" />
-                  : cashierStep === "review"
-                    ? <QrCode size={22} weight="bold" aria-hidden="true" />
-                    : <ArrowDown size={22} weight="bold" aria-hidden="true" />}
-              {cashierProcessing
-                ? `PROCESSING ${cashierMode.toUpperCase()}`
-                : cashierStep === "details"
-                  ? "CONTINUE"
-                  : cashierMode === "withdraw"
-                    ? `CONFIRM ${formatPeso(Number(depositAmount) || 0)}`
-                    : `I'VE PAID · CREDIT ${formatPeso(Number(depositAmount) || 0)}`}
-            </button>
-          </form>
-        </Modal>
-      )}
+      {cashierOverlay}
 
       {settingsOpen && (
         <TableSettingsModal

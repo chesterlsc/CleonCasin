@@ -36,6 +36,34 @@
 
 .baccarat-topbar-actions { justify-content: flex-end; }
 
+.baccarat-cashier-button {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid rgba(108, 228, 189, 0.58);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(20, 55, 45, 0.96), rgba(9, 31, 26, 0.98));
+  color: var(--mint);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  box-shadow: inset 0 0 18px rgba(108, 228, 189, 0.06), 0 0 18px rgba(108, 228, 189, 0.05);
+  cursor: pointer;
+}
+
+.baccarat-cashier-button:hover {
+  border-color: rgba(108, 228, 189, 0.88);
+  background: linear-gradient(180deg, rgba(28, 72, 59, 0.98), rgba(12, 39, 32, 0.98));
+}
+
+.baccarat-cashier-button:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
 .baccarat-icon-button,
 .baccarat-history-button {
   height: 44px;
@@ -630,6 +658,15 @@
   .baccarat-balance strong { font-size: 13px; }
   .baccarat-balance svg { width: 22px; height: 22px; }
   .baccarat-history-button { display: none; }
+  .baccarat-cashier-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    padding: 0;
+    border-radius: 9px;
+  }
+  .baccarat-cashier-button span { display: none; }
+  .baccarat-cashier-button svg { width: 19px; height: 19px; }
 
   .baccarat-live-badge { display: none; }
   .baccarat-status { top: 10px; height: 25px; max-width: calc(100% - 92px); overflow: hidden; padding: 0 10px; font-size: 7px; text-overflow: ellipsis; }
@@ -2660,4 +2697,310 @@
     border-radius: 18px 18px 5px 5px;
     box-shadow: 0 -16px 38px rgba(0, 0, 0, 0.68), inset 0 1px rgba(255, 236, 185, 0.08), 0 0 0 3px rgba(4, 6, 7, 0.78);
   }
+}
+
+/* Royal Treasury side-bet emblems */
+.baccarat-side-bet-console {
+  padding: 16px 10px 9px;
+  border-color: rgba(222, 182, 94, 0.42);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(67, 115, 204, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 0%, rgba(97, 216, 174, 0.1), transparent 30%),
+    radial-gradient(circle at 84% 0%, rgba(211, 78, 73, 0.11), transparent 28%),
+    linear-gradient(180deg, rgba(20, 24, 27, 0.95), rgba(3, 5, 7, 0.98));
+  box-shadow:
+    inset 0 1px rgba(255, 244, 208, 0.12),
+    inset 0 -18px 30px rgba(0, 0, 0, 0.28),
+    0 18px 36px rgba(0, 0, 0, 0.42),
+    0 0 0 3px rgba(4, 6, 8, 0.42);
+}
+
+.baccarat-side-bet-label {
+  top: -11px;
+  min-height: 22px;
+  gap: 6px;
+  padding: 0 12px;
+  border-color: rgba(222, 182, 94, 0.58);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #272016, #0a0c0e 82%);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.45), inset 0 1px rgba(255, 241, 196, 0.13);
+}
+
+.baccarat-side-bet-label > b {
+  color: #f2d693;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+}
+
+.baccarat-side-bet-label > small {
+  padding-left: 7px;
+  border-left: 1px solid rgba(222, 182, 94, 0.3);
+  color: rgba(198, 206, 210, 0.58);
+  font-size: 4.5px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.baccarat-side-bet-row {
+  gap: 8px;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot {
+  height: 72px;
+  display: grid;
+  grid-template-columns: 47px minmax(0, 1fr);
+  grid-template-rows: 1fr 1fr;
+  place-items: initial;
+  align-content: center;
+  gap: 0 7px;
+  padding: 7px 8px;
+  border-width: 1px;
+  border-radius: 18px;
+  background: linear-gradient(155deg, rgba(24, 30, 35, 0.97), rgba(4, 7, 9, 0.99));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -16px 24px rgba(0, 0, 0, 0.3),
+    0 10px 22px rgba(0, 0, 0, 0.34);
+  isolation: isolate;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.08), transparent 28%, transparent 70%, rgba(232, 189, 96, 0.05));
+  pointer-events: none;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 5px;
+  border: 1px solid rgba(255, 235, 184, 0.045);
+  border-radius: calc(18px - 5px);
+  pointer-events: none;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-side-bet-mark {
+  position: relative;
+  z-index: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: 47px;
+  height: 47px;
+  display: grid !important;
+  place-items: center;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.56));
+}
+
+.baccarat-side-bet-mark > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  transform: translateZ(0);
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.baccarat-side-bet-mark > b {
+  z-index: 3;
+  right: -2px;
+  bottom: -1px;
+  min-width: 16px;
+  height: 16px;
+  border-color: rgba(244, 216, 151, 0.82);
+  background: linear-gradient(180deg, #211b13, #07090b);
+  color: #f5d995;
+  font-size: 7px;
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.58), inset 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot > span:not(.baccarat-side-bet-mark) {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+  justify-self: start;
+  max-width: none;
+  color: #ece4d2 !important;
+  font-size: 6.6px;
+  line-height: 1;
+  letter-spacing: 0.065em;
+  text-align: left;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.72);
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot > strong {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  justify-self: start;
+  color: rgba(244, 215, 147, 0.78);
+  font-size: 5.6px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot > small {
+  display: none;
+}
+
+.spot-player-pair .baccarat-bet-spot {
+  border-color: rgba(76, 133, 239, 0.55) !important;
+  background: linear-gradient(155deg, rgba(19, 40, 77, 0.96), rgba(4, 7, 12, 0.99)) !important;
+}
+.spot-panda .baccarat-bet-spot,
+.spot-heavenly .baccarat-bet-spot {
+  border-color: rgba(106, 219, 180, 0.46) !important;
+  background: linear-gradient(155deg, rgba(17, 49, 39, 0.94), rgba(5, 10, 9, 0.99)) !important;
+}
+.spot-tiger-six .baccarat-bet-spot {
+  border-color: rgba(75, 128, 219, 0.48) !important;
+  background: linear-gradient(155deg, rgba(18, 34, 65, 0.94), rgba(7, 8, 11, 0.99)) !important;
+}
+.spot-tiger-seven .baccarat-bet-spot,
+.spot-banker-pair .baccarat-bet-spot {
+  border-color: rgba(231, 93, 86, 0.48) !important;
+  background: linear-gradient(155deg, rgba(67, 25, 28, 0.94), rgba(12, 6, 8, 0.99)) !important;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot:not(:disabled):hover {
+  transform: translateY(-4px) scale(1.018);
+  border-color: rgba(244, 213, 143, 0.86) !important;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 -18px 26px rgba(0, 0, 0, 0.32),
+    0 15px 27px rgba(0, 0, 0, 0.48),
+    0 0 20px rgba(222, 182, 94, 0.12);
+}
+
+.baccarat-bet-wrap.is-side .baccarat-bet-spot:not(:disabled):hover .baccarat-side-bet-mark > img,
+.baccarat-bet-wrap.is-side.has-bet .baccarat-side-bet-mark > img {
+  transform: translateY(-2px) scale(1.08);
+  filter: saturate(1.08) brightness(1.08);
+}
+
+.baccarat-bet-wrap.is-side.has-bet .baccarat-bet-spot {
+  border-color: rgba(244, 213, 143, 0.8) !important;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -16px 24px rgba(0, 0, 0, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(223, 180, 88, 0.14);
+}
+
+.baccarat-bet-wrap.is-side.is-win .baccarat-side-bet-mark > img {
+  animation: royal-treasure-win 820ms ease-in-out infinite alternate;
+}
+
+.baccarat-bet-wrap.is-side .baccarat-spot-result {
+  z-index: 12;
+  top: -27px;
+  border-color: rgba(255, 222, 145, 0.9);
+  background: linear-gradient(180deg, #5c451b, #171007);
+  color: #fff0bf;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.58), 0 0 24px rgba(244, 201, 107, 0.28);
+}
+
+@keyframes royal-treasure-win {
+  from { transform: translateY(-2px) scale(1.05); filter: saturate(1.05) brightness(1.03) drop-shadow(0 0 0 rgba(255, 218, 132, 0)); }
+  to { transform: translateY(-4px) scale(1.13); filter: saturate(1.2) brightness(1.18) drop-shadow(0 0 8px rgba(255, 218, 132, 0.52)); }
+}
+
+@media (max-width: 760px) {
+  .baccarat-side-bet-console {
+    padding: 9px 4px 4px;
+    border-radius: 14px;
+    box-shadow: inset 0 1px rgba(255, 244, 208, 0.1), inset 0 -10px 18px rgba(0, 0, 0, 0.25), 0 10px 20px rgba(0, 0, 0, 0.32);
+  }
+  .baccarat-side-bet-label {
+    top: -7px;
+    min-height: 15px;
+    padding: 0 7px;
+    border-radius: 7px;
+  }
+  .baccarat-side-bet-label > b { font-size: 4.8px; }
+  .baccarat-side-bet-label > small { display: none; }
+  .baccarat-side-bet-row { gap: 3px; }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot {
+    height: 39px;
+    grid-template-columns: 29px minmax(0, 1fr);
+    gap: 0 3px;
+    padding: 3px 4px;
+    border-radius: 10px;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot::after {
+    inset: 3px;
+    border-radius: 7px;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-side-bet-mark {
+    width: 29px;
+    height: 29px;
+  }
+  .baccarat-side-bet-mark > b {
+    right: -1px;
+    bottom: 0;
+    min-width: 11px;
+    height: 11px;
+    font-size: 4.5px;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot > span:not(.baccarat-side-bet-mark) {
+    font-size: 4.6px;
+    letter-spacing: 0.025em;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot > strong {
+    font-size: 3.9px;
+    letter-spacing: 0;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-spot-result {
+    top: -21px;
+    min-width: 35px;
+    min-height: 20px;
+    padding: 2px 5px;
+    font-size: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .baccarat-bet-wrap.is-side.is-win .baccarat-side-bet-mark > img { animation: none !important; }
+  .baccarat-side-bet-mark > img { transition-duration: 1ms !important; }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .baccarat-bet-layout {
+    top: 44%;
+    width: min(760px, 90vw);
+    gap: 5px;
+  }
+  .baccarat-bet-wrap.is-main .baccarat-bet-spot,
+  .baccarat-bet-wrap.is-main.spot-player .baccarat-bet-spot,
+  .baccarat-bet-wrap.is-main.spot-banker .baccarat-bet-spot,
+  .baccarat-bet-wrap.is-main.spot-tie .baccarat-bet-spot {
+    height: 72px;
+  }
+  .baccarat-bet-wrap.is-main.spot-tie .baccarat-bet-spot { width: 82px; }
+  .baccarat-side-bet-console { padding: 13px 7px 7px; }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot {
+    height: 58px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 0 5px;
+    padding: 5px 6px;
+    border-radius: 15px;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot::after { border-radius: 10px; }
+  .baccarat-bet-wrap.is-side .baccarat-side-bet-mark {
+    width: 38px;
+    height: 38px;
+  }
+  .baccarat-side-bet-mark > b {
+    min-width: 14px;
+    height: 14px;
+    font-size: 6px;
+  }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot > span:not(.baccarat-side-bet-mark) { font-size: 5.7px; }
+  .baccarat-bet-wrap.is-side .baccarat-bet-spot > strong { font-size: 5px; }
 }
