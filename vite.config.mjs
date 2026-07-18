@@ -104,8 +104,9 @@ function createCasinoApi() {
         const record = {
           id: payload.id || `round-${Date.now()}`,
           createdAt: payload.createdAt || new Date().toISOString(),
-          lobby: payload.lobby === "solo" ? "solo" : "arena",
-          mode: payload.mode === "classic" ? "classic" : "freebet",
+          game: payload.game === "baccarat" ? "baccarat" : "blackjack",
+          lobby: payload.lobby === "baccarat" ? "baccarat" : payload.lobby === "solo" ? "solo" : "arena",
+          mode: payload.mode === "speed" ? "speed" : payload.mode === "classic" ? "classic" : "freebet",
           mainBet: Math.max(0, Number(payload.mainBet || 0)),
           sideBets: Math.max(0, Number(payload.sideBets || 0)),
           totalBet: Math.max(0, Number(payload.totalBet || 0)),

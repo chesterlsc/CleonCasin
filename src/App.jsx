@@ -76,6 +76,7 @@ import {
   timeoutDecision,
   winStreakFromHistory,
 } from "./game.js";
+import { SpeedBaccarat } from "./SpeedBaccarat.jsx";
 
 const SUIT_MARKS = {
   spades: "♠",
@@ -508,6 +509,16 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
       players: "6 SEATS",
       accent: "coral",
     },
+    {
+      id: "baccarat",
+      eyebrow: "PREMIUM LIVE TABLE",
+      title: "CLEOPATRA SPEED",
+      copy: "Dimensional Speed Baccarat with treasure side bets, cinematic pacing, and an optional tactile card peel.",
+      timer: "12 SEC",
+      minimum: "₱100 MIN",
+      players: "8 DECKS",
+      accent: "gold",
+    },
   ];
 
   return (
@@ -522,9 +533,9 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
 
       <section className="lobby-hero">
         <div className="lobby-hero-copy">
-          <span className="lobby-kicker"><Crown size={17} weight="fill" /> CLEOPATRA LIVE BLACKJACK</span>
+          <span className="lobby-kicker"><Crown size={17} weight="fill" /> CLEOPATRA LIVE CASINO</span>
           <h1>Choose your table.<br />Own every decision.</h1>
-          <p>Classic and Free Bet blackjack with Evolution-style pacing, tracked PHP results, and a persistent round ledger.</p>
+          <p>Classic and Free Bet Blackjack plus premium Speed Baccarat, all with tracked PHP results and one persistent round ledger.</p>
           <LiveStats stats={stats} />
         </div>
         <div className="lobby-brand-orbit" aria-hidden="true">
@@ -535,10 +546,10 @@ function CasinoLobby({ stats, dailyPlayers, onEnter, onHistory }) {
         </div>
       </section>
 
-      <section className="lobby-tables" aria-label="Cleopatra blackjack tables">
+      <section className="lobby-tables" aria-label="Cleopatra live casino tables">
         <div className="lobby-section-heading">
-          <div><span>LIVE NOW</span><h2>Blackjack tables</h2></div>
-          <p>Tables include Hot 3, 21+3, Perfect Pairs, plus Bust It or the Free Bet token wager.</p>
+          <div><span>LIVE NOW</span><h2>Live casino tables</h2></div>
+          <p>Choose focused Blackjack, the six-seat arena, or the new 12-second Speed Baccarat table.</p>
         </div>
         <div className="table-card-grid">
           {tables.map((table) => (
@@ -592,7 +603,7 @@ function HistoryModal({ history, stats, onClose }) {
           <article key={round.id} className={`history-row${round.net > 0 ? " is-win" : round.net === 0 ? " is-push" : " is-loss"}`}>
             <div>
               <b>{String(round.outcome).toUpperCase()}</b>
-              <small>{dateFormatter.format(new Date(round.createdAt))} · {round.lobby === "solo" ? "SOLO" : "ARENA"} · {String(round.mode).toUpperCase()}</small>
+              <small>{dateFormatter.format(new Date(round.createdAt))} · {round.game === "baccarat" || round.lobby === "baccarat" ? "BACCARAT" : round.lobby === "solo" ? "SOLO" : "ARENA"} · {String(round.mode).toUpperCase()}</small>
             </div>
             <strong>{formatPeso(round.totalBet)}</strong>
             <strong>{formatPeso(round.returned)}</strong>
@@ -790,7 +801,7 @@ function TableSettingsModal({ deckCount, showCardCount, statsMinimized, dealSpee
 }
 
 export function App() {
-  const [view, setView] = useState("table");
+  const [view, setView] = useState("lobby");
   const [tableVariant, setTableVariant] = useState("arena");
   const [mode, setMode] = useState("freebet");
   const [walletBalance, setWalletBalance] = useState(10250);
@@ -892,7 +903,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (tableVariant !== "solo" || !["betting", "settled"].includes(game.phase) || totalWinPopup) return undefined;
+    if (view !== "table" || tableVariant !== "solo" || !["betting", "settled"].includes(game.phase) || totalWinPopup) return undefined;
     setBettingSeconds(12);
     let launchTimer = null;
     const timer = window.setInterval(() => {
@@ -907,7 +918,7 @@ export function App() {
       window.clearInterval(timer);
       window.clearTimeout(launchTimer);
     };
-  }, [tableVariant, game.phase, game.round, totalWinPopup]);
+  }, [view, tableVariant, game.phase, game.round, totalWinPopup]);
 
   useEffect(() => {
     let active = true;
@@ -1056,6 +1067,10 @@ export function App() {
 
   const enterTable = (variant) => {
     if (ROUND_LOCKED_PHASES.includes(gameRef.current.phase)) return;
+    if (variant === "baccarat") {
+      setView("baccarat");
+      return;
+    }
     const next = copyGame(gameRef.current);
     const changesOuterSideBet = usesFreeBetSideBet !== (variant === "solo" && mode === "freebet");
     const humanIndex = Math.max(0, next.seats.findIndex((seat) => seat.role === "you"));
@@ -2141,6 +2156,23 @@ export function App() {
     return (
       <>
         <CasinoLobby stats={casinoStats} dailyPlayers={dailySoloPlayers} onEnter={enterTable} onHistory={() => setHistoryOpen(true)} />
+        {historyOpen && <HistoryModal history={betHistory} stats={casinoStats} onClose={() => setHistoryOpen(false)} />}
+      </>
+    );
+  }
+
+  if (view === "baccarat") {
+    return (
+      <>
+        <SpeedBaccarat
+          balance={walletBalance}
+          onBalanceChange={updateBalance}
+          onBack={() => setView("lobby")}
+          onHistory={() => setHistoryOpen(true)}
+          onRoundSettled={saveRoundHistory}
+          soundOn={soundOn}
+          onToggleSound={() => setSoundOn((current) => !current)}
+        />
         {historyOpen && <HistoryModal history={betHistory} stats={casinoStats} onClose={() => setHistoryOpen(false)} />}
       </>
     );
